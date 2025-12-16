@@ -7,7 +7,7 @@
 - [ ] Connect Become a Sponsor form (`/become-a-sponsor`)
 
 ## Integrations
-- [ ] Connect Eventbrite API for upcoming events on homepage
+- [x] Connect Eventbrite API for upcoming events on homepage
 
 ## Content Review
 - [ ] Review Home page content
@@ -20,3 +20,6 @@
 
 ## Branding
 - [ ] Update Logo
+
+
+

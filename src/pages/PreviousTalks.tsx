@@ -1,164 +1,19 @@
 import { useState } from 'react';
-
-// Available tags for filtering
-const allTags = [
-  'Adobe Analytics',
-  'AI',
-  'Attribution',
-  'Big Data',
-  'Data Culture',
-  'Data Implementation',
-  'Data Integration',
-  'Data Layer',
-  'Data Modelling',
-  'Data Privacy',
-  'Data Science',
-  'Data Visualisation',
-  'DBT',
-  'Google Analytics',
-  'Google BigQuery',
-  'Hadoop',
-  'R',
-  'SQL',
-  'Tableau',
-  'Web Analytics',
-];
-
-// Sample data - this would come from a CMS or API in production
-const talks = [
-  {
-    id: 1,
-    title: 'Building Data-Driven Culture at Scale',
-    speaker: 'Jane Smith',
-    company: 'Tech Corp',
-    date: 'November 2024',
-    description: 'How to foster a data-driven mindset across large organizations and overcome common challenges.',
-    tags: ['Data Culture', 'Big Data'],
-    videoUrl: '#',
-  },
-  {
-    id: 2,
-    title: 'Advanced Attribution Modeling',
-    speaker: 'John Doe',
-    company: 'Analytics Inc',
-    date: 'October 2024',
-    description: 'Deep dive into multi-touch attribution and how to implement it effectively for your marketing efforts.',
-    tags: ['Attribution', 'Google Analytics'],
-    videoUrl: '#',
-  },
-  {
-    id: 3,
-    title: 'Privacy-First Analytics',
-    speaker: 'Sarah Johnson',
-    company: 'Privacy Co',
-    date: 'September 2024',
-    description: 'Navigating the cookieless future and maintaining measurement capabilities while respecting user privacy.',
-    tags: ['Data Privacy', 'Web Analytics'],
-    videoUrl: '#',
-  },
-  {
-    id: 4,
-    title: 'Real-Time Data Pipelines with BigQuery',
-    speaker: 'Mike Chen',
-    company: 'DataFlow',
-    date: 'August 2024',
-    description: 'Architecture patterns for building reliable real-time data pipelines at scale using Google BigQuery.',
-    tags: ['Google BigQuery', 'Data Integration', 'SQL'],
-    videoUrl: '#',
-  },
-  {
-    id: 5,
-    title: 'ML in Production: Lessons Learned',
-    speaker: 'Emily Davis',
-    company: 'AI Solutions',
-    date: 'July 2024',
-    description: 'Practical insights from deploying machine learning models in production environments.',
-    tags: ['AI', 'Data Science'],
-    videoUrl: '#',
-  },
-  {
-    id: 6,
-    title: 'The Future of Web Analytics',
-    speaker: 'Tom Wilson',
-    company: 'Web Analytics Pro',
-    date: 'June 2024',
-    description: 'Exploring emerging trends and technologies shaping the future of web analytics.',
-    tags: ['Web Analytics', 'Google Analytics'],
-    videoUrl: '#',
-  },
-  {
-    id: 7,
-    title: 'Data Visualization Best Practices',
-    speaker: 'Lisa Park',
-    company: 'Viz Studio',
-    date: 'May 2024',
-    description: 'Creating compelling and insightful data visualizations that drive decision making.',
-    tags: ['Data Visualisation', 'Tableau'],
-    videoUrl: '#',
-  },
-  {
-    id: 8,
-    title: 'Implementing a Data Layer',
-    speaker: 'Chris Brown',
-    company: 'Tag Manager Experts',
-    date: 'April 2024',
-    description: 'Best practices for implementing a robust data layer for your analytics stack.',
-    tags: ['Data Layer', 'Data Implementation', 'Google Analytics'],
-    videoUrl: '#',
-  },
-  {
-    id: 9,
-    title: 'Adobe Analytics Deep Dive',
-    speaker: 'Amanda Lee',
-    company: 'Digital Analytics Co',
-    date: 'March 2024',
-    description: 'Advanced techniques and tips for getting the most out of Adobe Analytics.',
-    tags: ['Adobe Analytics', 'Web Analytics'],
-    videoUrl: '#',
-  },
-  {
-    id: 10,
-    title: 'Data Modelling with DBT',
-    speaker: 'Ryan Murphy',
-    company: 'Modern Data Stack',
-    date: 'February 2024',
-    description: 'Transform your raw data into analytics-ready datasets using DBT.',
-    tags: ['DBT', 'Data Modelling', 'SQL'],
-    videoUrl: '#',
-  },
-  {
-    id: 11,
-    title: 'Statistical Analysis with R',
-    speaker: 'Dr. Kate Williams',
-    company: 'Data Research Lab',
-    date: 'January 2024',
-    description: 'Using R for advanced statistical analysis and data exploration.',
-    tags: ['R', 'Data Science'],
-    videoUrl: '#',
-  },
-  {
-    id: 12,
-    title: 'Big Data with Hadoop',
-    speaker: 'James Taylor',
-    company: 'Enterprise Data',
-    date: 'December 2023',
-    description: 'Processing and analyzing large-scale datasets with Hadoop ecosystem.',
-    tags: ['Hadoop', 'Big Data'],
-    videoUrl: '#',
-  },
-];
+import { Link } from 'react-router-dom';
+import { usePastEvents } from '../hooks/usePastEvents';
 
 export function PreviousTalks() {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const { events, loading, error } = usePastEvents();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredTalks = talks.filter(talk => {
-    const matchesTag = !selectedTag || talk.tags.includes(selectedTag);
-    const matchesSearch = !searchQuery || 
-      talk.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      talk.speaker.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      talk.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTag && matchesSearch;
+  const filteredEvents = events.filter(event => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      event.title.toLowerCase().includes(query) ||
+      event.description.toLowerCase().includes(query) ||
+      event.location.toLowerCase().includes(query)
+    );
   });
 
   return (
@@ -168,20 +23,20 @@ export function PreviousTalks() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
           <div className="max-w-3xl">
             <span className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">
-              Knowledge Archive
+              Event Archive
             </span>
             <h1 className="text-4xl md:text-5xl text-[var(--color-primary)] mt-2 mb-6">
-              Previous Talks
+              Previous Events
             </h1>
             <p className="text-lg text-[var(--color-text-muted)] leading-relaxed">
-              Explore insights from our community's brightest minds. 
-              From technical deep-dives to strategic perspectives, find talks that inspire and inform.
+              Explore our past Data & Analytics Wednesday events. 
+              From technical deep-dives to networking sessions, see what our community has been up to.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Filters */}
+      {/* Search */}
       <section className="sticky top-16 z-40 bg-white/80 backdrop-blur-lg border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -197,51 +52,80 @@ export function PreviousTalks() {
               </svg>
               <input
                 type="text"
-                placeholder="Search talks..."
+                placeholder="Search events..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
               />
             </div>
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedTag(null)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  !selectedTag 
-                    ? 'bg-[var(--color-accent)] text-white' 
-                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'
-                }`}
-              >
-                All
-              </button>
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    selectedTag === tag 
-                      ? 'bg-[var(--color-accent)] text-white' 
-                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+            {/* Event count */}
+            <div className="text-sm text-[var(--color-text-muted)]">
+              {!loading && `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''}`}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Talks Grid */}
+      {/* Events Grid */}
       <section className="py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          {filteredTalks.length > 0 ? (
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center gap-3 text-[var(--color-text-muted)]">
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Loading past events...
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="text-center py-16">
+              <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-xl text-[var(--color-primary)] mb-2">Unable to load events</h3>
+              <p className="text-[var(--color-text-muted)] mb-4">{error}</p>
+              <a
+                href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-[var(--color-accent)] font-medium hover:underline"
+              >
+                View events on Eventbrite
+                <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          )}
+
+          {/* No Events */}
+          {!loading && !error && filteredEvents.length === 0 && (
+            <div className="text-center py-16">
+              <svg className="w-16 h-16 mx-auto text-[var(--color-border)] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-xl text-[var(--color-primary)] mb-2">
+                {searchQuery ? 'No events found' : 'No past events yet'}
+              </h3>
+              <p className="text-[var(--color-text-muted)]">
+                {searchQuery ? 'Try adjusting your search.' : 'Check back after our next event!'}
+              </p>
+            </div>
+          )}
+
+          {/* Events List */}
+          {!loading && !error && filteredEvents.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTalks.map((talk, index) => (
+              {filteredEvents.map((event, index) => (
                 <article
-                  key={talk.id}
+                  key={event.id}
                   className="group bg-white rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in-up"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
@@ -249,63 +133,56 @@ export function PreviousTalks() {
                   <div className="h-2 bg-gradient-to-r from-[var(--color-accent)] via-[var(--color-chart-2)] to-[var(--color-chart-3)]"></div>
                   
                   <div className="p-6">
-                    {/* Date */}
-                    <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">
-                      {talk.date}
-                    </span>
-                    
-                    {/* Title */}
-                    <h3 className="text-xl text-[var(--color-primary)] mt-2 mb-3 group-hover:text-[var(--color-accent)] transition-colors">
-                      {talk.title}
-                    </h3>
-                    
-                    {/* Speaker */}
+                    {/* Date badge */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)] flex items-center justify-center text-white font-semibold text-sm">
-                        {talk.speaker.split(' ').map(n => n[0]).join('')}
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 flex flex-col items-center justify-center text-white">
+                        <span className="text-lg font-bold leading-none">{event.dayOfMonth}</span>
+                        <span className="text-[10px] uppercase tracking-wider opacity-80">{event.month}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[var(--color-text)]">{talk.speaker}</p>
-                        <p className="text-xs text-[var(--color-text-muted)]">{talk.company}</p>
+                        <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">
+                          {event.year}
+                        </span>
+                        <p className="text-sm text-[var(--color-text-muted)]">{event.time}</p>
                       </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <h3 className="text-xl text-[var(--color-primary)] mb-3 group-hover:text-[var(--color-accent)] transition-colors line-clamp-2">
+                      {event.title}
+                    </h3>
+                    
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] mb-3">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="truncate">{event.location}</span>
                     </div>
                     
                     {/* Description */}
-                    <p className="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-2">
-                      {talk.description}
-                    </p>
-                    
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {talk.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 rounded-md bg-[var(--color-surface-alt)] text-xs text-[var(--color-text-muted)]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    {event.description && (
+                      <p className="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-3">
+                        {event.description}
+                      </p>
+                    )}
                     
                     {/* Action */}
-                    <button className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center justify-center gap-2">
+                    <a 
+                      href={event.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center justify-center gap-2"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
-                      Watch Recording
-                    </button>
+                      View on Eventbrite
+                    </a>
                   </div>
                 </article>
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <svg className="w-16 h-16 mx-auto text-[var(--color-border)] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-xl text-[var(--color-primary)] mb-2">No talks found</h3>
-              <p className="text-[var(--color-text-muted)]">Try adjusting your search or filter criteria.</p>
             </div>
           )}
         </div>
@@ -320,15 +197,14 @@ export function PreviousTalks() {
           <p className="text-[var(--color-text-muted)] mb-6">
             We're always looking for speakers to share their experiences and insights with our community.
           </p>
-          <a
-            href="/become-a-speaker"
+          <Link
+            to="/become-a-speaker"
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Submit a Talk Proposal
-          </a>
+          </Link>
         </div>
       </section>
     </div>
   );
 }
-

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useEventbriteEvents } from '../hooks/useEventbriteEvents';
 
 // Import event photos
 import eventPhoto1 from '../assets/event_photos/eb6zidzueaajfa4-orig_orig.jpg';
@@ -10,20 +11,9 @@ import imwtLogo from '../assets/sponsor_logos/imwt.webp';
 import metriclabsLogo from '../assets/sponsor_logos/metriclabs.png';
 import snowplowLogo from '../assets/sponsor_logos/snowplow.png';
 
-// Placeholder for Eventbrite integration
-const upcomingEvents = [
-  {
-    id: 1,
-    title: 'Upcoming Talk - Coming Soon',
-    date: 'TBA',
-    time: 'TBA',
-    location: 'Sydney CBD',
-    description: 'Stay tuned for our next exciting talk!',
-    isPlaceholder: true,
-  },
-];
-
 export function Home() {
+  const { events, loading, error } = useEventbriteEvents();
+
   return (
     <div>
       {/* Hero Section */}
@@ -97,22 +87,88 @@ export function Home() {
           </div>
 
           <div className="grid gap-6">
-            {upcomingEvents.map((event) => (
+            {/* Loading State */}
+            {loading && (
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8 text-center">
+                <div className="inline-flex items-center gap-3 text-[var(--color-text-muted)]">
+                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Loading upcoming events...
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="bg-white rounded-2xl border border-red-200 p-8">
+                <div className="text-center">
+                  <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-[var(--color-text-muted)] mb-4">Unable to load events at the moment.</p>
+                  <a
+                    href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-medium hover:bg-[var(--color-accent-light)] transition-all"
+                  >
+                    View Events on Eventbrite
+                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* No Events State */}
+            {!loading && !error && events.length === 0 && (
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8">
+                <div className="text-center">
+                  <svg className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-lg text-[var(--color-primary)] mb-2">No upcoming events scheduled</p>
+                  <p className="text-[var(--color-text-muted)] mb-4">Check back soon for our next meetup!</p>
+                  <a
+                    href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-[var(--color-accent)] font-medium hover:underline"
+                  >
+                    View our Eventbrite page
+                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Events List */}
+            {!loading && !error && events.map((event) => (
               <div
                 key={event.id}
                 className="relative bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm hover:shadow-md transition-all group"
               >
-                {event.isPlaceholder && (
-                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
-                    Coming Soon
+                {/* Past Event Badge */}
+                {!event.isUpcoming && (
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                    Past Event
                   </div>
                 )}
                 
                 <div className="flex flex-col md:flex-row md:items-center gap-6">
                   {/* Date badge */}
-                  <div className="flex-shrink-0 w-20 h-20 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)] flex flex-col items-center justify-center text-white">
-                    <span className="text-2xl font-bold">TBA</span>
-                    <span className="text-xs uppercase tracking-wider opacity-80">2024</span>
+                  <div className={`flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white ${
+                    event.isUpcoming 
+                      ? 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)]' 
+                      : 'bg-gradient-to-br from-slate-400 to-slate-500'
+                  }`}>
+                    <span className="text-2xl font-bold">{event.dayOfMonth}</span>
+                    <span className="text-xs uppercase tracking-wider opacity-80">{event.month}</span>
                   </div>
                   
                   {/* Event details */}
@@ -135,18 +191,24 @@ export function Home() {
                         {event.location}
                       </span>
                     </div>
-                    <p className="mt-3 text-[var(--color-text-muted)]">{event.description}</p>
+                    {event.description && (
+                      <p className="mt-3 text-[var(--color-text-muted)]">{event.description}</p>
+                    )}
                   </div>
                   
                   {/* CTA */}
                   <div className="flex-shrink-0">
                     <a
-                      href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
+                      href={event.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-surface-alt)] text-[var(--color-text)] font-medium hover:bg-[var(--color-accent)] hover:text-white transition-all"
+                      className={`inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all ${
+                        event.isUpcoming
+                          ? 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                     >
-                      View on Eventbrite
+                      {event.isUpcoming ? 'Register Now' : 'View Event'}
                       <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
@@ -155,28 +217,6 @@ export function Home() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Eventbrite integration note */}
-          <div className="mt-8 p-4 rounded-xl bg-blue-50 border border-blue-100">
-            <p className="text-sm text-blue-700 flex items-start gap-2">
-              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>
-                <strong>Note:</strong> Events will be automatically pulled from Eventbrite once the integration is configured.
-                For now, check our{' '}
-                <a 
-                  href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="underline hover:no-underline"
-                >
-                  Eventbrite page
-                </a>{' '}
-                for the latest events.
-              </span>
-            </p>
           </div>
         </div>
       </section>
@@ -291,4 +331,7 @@ export function Home() {
     </div>
   );
 }
+
+
+
 
