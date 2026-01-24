@@ -5,6 +5,7 @@ export { BecomeSpeaker } from './BecomeSpeaker';
 export { BecomeSponsor } from './BecomeSponsor';
 export { About } from './About';
 export { CodeOfConduct } from './CodeOfConduct';
+export { NotFound } from './NotFound';
 
 
 

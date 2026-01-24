@@ -316,8 +316,8 @@ export function Home() {
             <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
               <img src={canvaLogo} alt="Canva" className="h-10 w-auto" />
             </a>
-            <a href="https://www.yoursite.com" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={imwtLogo} alt="IMWT" className="h-10 w-auto" />
+            <a href="https://inmarketingwetrust.com.au/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
+              <img src={imwtLogo} alt="In Marketing We Trust" className="h-10 w-auto" />
             </a>
             <a href="https://www.metriclabs.com.au" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
               <img src={metriclabsLogo} alt="Metric Labs" className="h-10 w-auto" />

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
 type Profession = 'student' | 'professional' | 'looking' | '';
 
@@ -147,12 +148,12 @@ export function BecomeMember() {
           <p className="text-[var(--color-text-muted)] mb-8">
             Thank you for joining DAWSydney. We'll be in touch soon with information about upcoming events.
           </p>
-          <a
-            href="/"
+          <Link
+            to="/"
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Return Home
-          </a>
+          </Link>
         </div>
       </div>
     );

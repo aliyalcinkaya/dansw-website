@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://yourusername.github.io/dansw-website",
+  "homepage": "https://aliyalcinkaya.github.io/dansw-website",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
