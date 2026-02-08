@@ -1,6 +1,45 @@
+import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { submitNewsletterSubscription } from '../services/forms';
 
 export function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const handleNewsletterSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setStatus('idle');
+    setStatusMessage('');
+
+    try {
+      const result = await submitNewsletterSubscription({
+        source: 'footer',
+        email: newsletterEmail,
+        website,
+      });
+
+      if (!result.ok) {
+        setStatus('error');
+        setStatusMessage(result.message ?? 'Unable to subscribe right now.');
+        return;
+      }
+
+      setStatus('success');
+      setStatusMessage('Subscribed. You will receive updates on events and community news.');
+      setNewsletterEmail('');
+      setWebsite('');
+    } catch {
+      setStatus('error');
+      setStatusMessage('Network error while subscribing. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-[var(--color-primary)] text-white mt-auto">
       {/* Main footer content */}
@@ -94,19 +133,42 @@ export function Footer() {
               <h4 className="text-lg font-semibold mb-1">Stay in the loop</h4>
               <p className="text-white/60 text-sm">Get updates on upcoming events and community news.</p>
             </div>
-            <form className="flex w-full md:w-auto gap-3">
+            <form className="w-full md:w-auto" onSubmit={handleNewsletterSubmit}>
               <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-grow md:w-64 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:border-white/40 focus:bg-white/15 transition-colors"
-                required
+                type="text"
+                name="website"
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
               />
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium hover:bg-[var(--color-accent-light)] transition-colors whitespace-nowrap"
-              >
-                Subscribe
-              </button>
+              <div className="flex w-full md:w-auto gap-3">
+                <input
+                  type="email"
+                  value={newsletterEmail}
+                  onChange={(event) => setNewsletterEmail(event.target.value)}
+                  placeholder="Enter your email"
+                  className="flex-grow md:w-64 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:border-white/40 focus:bg-white/15 transition-colors"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium hover:bg-[var(--color-accent-light)] transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Subscribe'}
+                </button>
+              </div>
+              {status !== 'idle' && (
+                <p
+                  className={`text-sm mt-2 ${status === 'success' ? 'text-emerald-300' : 'text-red-300'}`}
+                  role="status"
+                >
+                  {statusMessage}
+                </p>
+              )}
             </form>
           </div>
         </div>
@@ -172,4 +234,3 @@ export function Footer() {
     </footer>
   );
 }
-

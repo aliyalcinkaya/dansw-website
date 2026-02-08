@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { submitMemberApplication } from '../services/forms';
 
 type Profession = 'student' | 'professional' | 'looking' | '';
 
@@ -96,17 +97,41 @@ export function BecomeMember() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log('Form submitted:', formData);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    setSubmitError('');
+
+    try {
+      if (!formData.profession) {
+        setSubmitError('Please select what best describes you.');
+        return;
+      }
+
+      const result = await submitMemberApplication({
+        source: '/join',
+        website,
+        name: formData.name,
+        email: formData.email,
+        profession: formData.profession,
+        institution: formData.institution,
+        goals: formData.goals,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        return;
+      }
+
+      setIsSubmitted(true);
+    } catch {
+      setSubmitError('Unable to submit right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getInstitutionLabel = () => {
@@ -258,6 +283,17 @@ export function BecomeMember() {
                 </h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  <input
+                    type="text"
+                    name="website"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
+
                   {/* Name */}
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
@@ -382,6 +418,12 @@ export function BecomeMember() {
                     )}
                   </button>
 
+                  {submitError && (
+                    <p className="text-sm text-red-600 text-center" role="status">
+                      {submitError}
+                    </p>
+                  )}
+
                   <p className="text-xs text-[var(--color-text-muted)] text-center">
                     By submitting this form, you agree to our{' '}
                     <a href="/code-of-conduct" className="text-[var(--color-accent)] hover:underline">
@@ -465,4 +507,3 @@ export function BecomeMember() {
     </div>
   );
 }
-

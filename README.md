@@ -42,6 +42,11 @@ Create a `.env` file in the root directory:
 ```bash
 VITE_EVENTBRITE_PRIVATE_TOKEN=your_eventbrite_api_token
 VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_SUPABASE_FORMS_TABLE=form_submissions
+VITE_SUPABASE_NEWSLETTER_TABLE=newsletter_subscriptions
+VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here # optional
 ```
 
 ### Installation
@@ -103,6 +108,29 @@ VITE_EVENTBRITE_PRIVATE_TOKEN=your_token_here
 VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
 ```
 
+### Supabase Form Backend
+
+Website forms submit to Supabase using two tables:
+- `form_submissions`: join/speaker/sponsor forms
+- `newsletter_subscriptions`: footer newsletter form
+
+1. Create or open a Supabase project.
+2. In SQL Editor, run `supabase/forms.sql`.
+3. Add these env vars:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_SUPABASE_FORMS_TABLE=form_submissions
+VITE_SUPABASE_NEWSLETTER_TABLE=newsletter_subscriptions
+```
+
+Optional (for form submit analytics to Mixpanel):
+
+```bash
+VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here
+```
+
 ### Base URL
 
 If deploying to a different path, update `base` in `vite.config.ts`:
@@ -117,33 +145,39 @@ export default defineConfig({
 ## Project Structure
 
 ```
-src/
-├── components/
-│   ├── Layout.tsx       # Main layout with skip navigation
-│   ├── Navigation.tsx   # Header navigation (desktop + mobile)
-│   ├── Footer.tsx       # Footer with newsletter form
-│   ├── Logo.tsx         # Logo component
-│   └── ScrollToTop.tsx  # Scroll restoration on route change
-├── hooks/
-│   ├── useEventbriteEvents.ts  # Fetch upcoming events
-│   └── usePastEvents.ts        # Fetch past events
-├── pages/
-│   ├── Home.tsx           # Landing page with events
-│   ├── PreviousTalks.tsx  # Event archive with search
-│   ├── BecomeMember.tsx   # Membership + volunteer form
-│   ├── BecomeSpeaker.tsx  # Speaker proposal form
-│   ├── BecomeSponsor.tsx  # Sponsorship inquiry form
-│   ├── About.tsx          # Organization info
-│   ├── CodeOfConduct.tsx  # Community guidelines
-│   ├── NotFound.tsx       # 404 page
-│   └── index.ts           # Barrel exports
-├── services/
-│   └── eventbrite.ts      # Eventbrite API integration
-├── types/
-│   └── eventbrite.ts      # TypeScript types
-├── App.tsx                # Router with lazy loading
-├── main.tsx               # Entry point
-└── index.css              # Global styles & Tailwind
+.
+├── src/
+│   ├── components/
+│   │   ├── Layout.tsx        # Main layout with skip navigation
+│   │   ├── Navigation.tsx    # Header navigation (desktop + mobile)
+│   │   ├── Footer.tsx        # Footer with newsletter form
+│   │   ├── ErrorBoundary.tsx # Global runtime error fallback
+│   │   ├── Logo.tsx          # Logo component
+│   │   └── ScrollToTop.tsx   # Scroll restoration on route change
+│   ├── hooks/
+│   │   ├── useEventbriteEvents.ts  # Fetch upcoming events
+│   │   └── usePastEvents.ts        # Fetch past events
+│   ├── pages/
+│   │   ├── Home.tsx          # Landing page with events
+│   │   ├── PreviousTalks.tsx # Event archive with search
+│   │   ├── BecomeMember.tsx  # Membership + volunteer form
+│   │   ├── BecomeSpeaker.tsx # Speaker proposal form
+│   │   ├── BecomeSponsor.tsx # Sponsorship inquiry form
+│   │   ├── About.tsx         # Organization info
+│   │   ├── CodeOfConduct.tsx # Community guidelines
+│   │   ├── NotFound.tsx      # 404 page
+│   │   └── index.ts          # Barrel exports
+│   ├── services/
+│   │   ├── eventbrite.ts     # Eventbrite API integration
+│   │   ├── forms.ts          # Supabase form submission client
+│   │   └── analytics.ts      # Optional Mixpanel form analytics
+│   ├── types/
+│   │   └── eventbrite.ts     # TypeScript types
+│   ├── App.tsx               # Router with lazy loading
+│   ├── main.tsx              # Entry point
+│   └── index.css             # Global styles & Tailwind
+└── supabase/
+    └── forms.sql             # Supabase table + RLS policy
 ```
 
 ## 🎨 Customization

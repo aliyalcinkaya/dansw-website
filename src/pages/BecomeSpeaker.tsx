@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { submitSpeakerApplication } from '../services/forms';
 
 interface FormData {
   name: string;
@@ -22,17 +23,32 @@ export function BecomeSpeaker() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log('Speaker form submitted:', formData);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    setSubmitError('');
+
+    try {
+      const result = await submitSpeakerApplication({
+        source: '/become-a-speaker',
+        website,
+        ...formData,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        return;
+      }
+
+      setIsSubmitted(true);
+    } catch {
+      setSubmitError('Unable to submit right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -183,6 +199,17 @@ export function BecomeSpeaker() {
                 </h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  <input
+                    type="text"
+                    name="website"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
+
                   {/* Name */}
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
@@ -317,6 +344,12 @@ export function BecomeSpeaker() {
                     )}
                   </button>
 
+                  {submitError && (
+                    <p className="text-sm text-red-600 text-center" role="status">
+                      {submitError}
+                    </p>
+                  )}
+
                   <p className="text-xs text-[var(--color-text-muted)] text-center">
                     We typically respond within 2 weeks. Questions? Contact us at{' '}
                     <a href="mailto:hello@dawsydney.org.au" className="text-[var(--color-accent)] hover:underline">
@@ -332,4 +365,3 @@ export function BecomeSpeaker() {
     </div>
   );
 }
-

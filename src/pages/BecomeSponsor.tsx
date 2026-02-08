@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { submitSponsorInquiry } from '../services/forms';
 
 interface FormData {
   name: string;
@@ -88,17 +89,32 @@ export function BecomeSponsor() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log('Sponsor inquiry submitted:', formData);
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    setSubmitError('');
+
+    try {
+      const result = await submitSponsorInquiry({
+        source: '/become-a-sponsor',
+        website,
+        ...formData,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        return;
+      }
+
+      setIsSubmitted(true);
+    } catch {
+      setSubmitError('Unable to submit right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -221,6 +237,17 @@ export function BecomeSponsor() {
               </p>
               
               <form onSubmit={handleSubmit} className="space-y-6">
+                <input
+                  type="text"
+                  name="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="hidden"
+                  aria-hidden="true"
+                />
+
                 <div className="grid sm:grid-cols-2 gap-6">
                   {/* Name */}
                   <div>
@@ -330,6 +357,12 @@ export function BecomeSponsor() {
                     </>
                   )}
                 </button>
+
+                {submitError && (
+                  <p className="text-sm text-red-600 text-center" role="status">
+                    {submitError}
+                  </p>
+                )}
               </form>
             </div>
           </div>
@@ -359,6 +392,5 @@ export function BecomeSponsor() {
     </div>
   );
 }
-
 
 
