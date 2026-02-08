@@ -42,6 +42,13 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /dansw-website/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_FORMS_TABLE: form_submissions
+          VITE_SUPABASE_NEWSLETTER_TABLE: newsletter_subscriptions
+          VITE_MIXPANEL_TOKEN: ${{ secrets.VITE_MIXPANEL_TOKEN }}
+          VITE_EVENTBRITE_PRIVATE_TOKEN: ${{ secrets.VITE_EVENTBRITE_PRIVATE_TOKEN }}
+          VITE_EVENTBRITE_ORGANIZATION_ID: ${{ secrets.VITE_EVENTBRITE_ORGANIZATION_ID }}
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -62,7 +69,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
 
 
 

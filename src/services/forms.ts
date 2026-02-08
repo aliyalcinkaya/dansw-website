@@ -54,7 +54,7 @@ interface NormalizedRecord {
   name?: string;
   company?: string;
   message?: string;
-  newsletter: boolean;
+  newsletter?: boolean;
   website?: string;
   mixpanel_anonymous_id: string;
   user_agent?: string;
@@ -143,8 +143,12 @@ function validatePayloadSize(record: NormalizedRecord) {
 }
 
 function mapErrorMessage(status: number, responseBody: string, tableName: string) {
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return 'Form backend authentication failed. Check Supabase keys and table policy.';
+  }
+
+  if (status === 403) {
+    return 'Submission was blocked by table permissions or RLS policy. Check Supabase policies for this table.';
   }
 
   if (status === 404) {
@@ -168,8 +172,7 @@ function mapErrorMessage(status: number, responseBody: string, tableName: string
 
 async function postSubmission(
   record: NormalizedRecord,
-  target: SubmissionTarget = 'forms',
-  upsertOnEmail = false
+  target: SubmissionTarget = 'forms'
 ): Promise<SubmitResult> {
   const config = getSupabaseConfig();
   if (!config) {
@@ -199,9 +202,6 @@ async function postSubmission(
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const tableName = target === 'newsletter' ? config.newsletterTable : config.formsTable;
   const endpoint = new URL(`${config.url}/rest/v1/${encodeURIComponent(tableName)}`);
-  if (upsertOnEmail) {
-    endpoint.searchParams.set('on_conflict', 'email');
-  }
 
   try {
     const response = await fetch(endpoint.toString(), {
@@ -210,14 +210,28 @@ async function postSubmission(
         'Content-Type': 'application/json',
         apikey: config.anonKey,
         Authorization: `Bearer ${config.anonKey}`,
-        Prefer: upsertOnEmail ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal',
+        Prefer: 'return=minimal',
       },
       body: JSON.stringify(record),
       signal: controller.signal,
     });
 
+    if (response.status === 409 && target === 'newsletter') {
+      // Duplicate email means already subscribed; treat as a successful outcome.
+      void trackAnalyticsEvent('Newsletter already subscribed', {
+        form_type: record.type,
+        source: record.source,
+        email: record.email,
+      });
+
+      return { ok: true, message: 'You are already subscribed.' };
+    }
+
     if (!response.ok) {
       const errorBody = await response.text();
+      if (import.meta.env.DEV) {
+        console.error(`Supabase insert failed (${response.status}) on ${tableName}: ${errorBody}`);
+      }
 
       void trackAnalyticsEvent('Form submit failed', {
         form_type: record.type,
@@ -264,7 +278,6 @@ function buildBaseRecord(input: BaseInput & { email: string }, type: FormType) {
     type,
     source: input.source,
     email: toTrimmed(input.email).toLowerCase(),
-    newsletter: false,
     website: toTrimmed(input.website) || undefined,
     mixpanel_anonymous_id: getAnalyticsAnonymousId(),
     user_agent: getUserAgent(),
@@ -303,6 +316,7 @@ export async function submitMemberApplication(input: MemberSubmissionInput): Pro
 
   return postSubmission({
     ...buildBaseRecord(input, 'member'),
+    newsletter: false,
     name,
     message: goals,
     payload: {
@@ -345,6 +359,7 @@ export async function submitSpeakerApplication(input: SpeakerSubmissionInput): P
 
   return postSubmission({
     ...buildBaseRecord(input, 'speaker'),
+    newsletter: false,
     name,
     message: bio,
     payload: {
@@ -387,6 +402,7 @@ export async function submitSponsorInquiry(input: SponsorSubmissionInput): Promi
 
   return postSubmission({
     ...buildBaseRecord(input, 'sponsor'),
+    newsletter: false,
     name,
     company,
     message: message || undefined,
@@ -406,12 +422,10 @@ export async function submitNewsletterSubscription(
   return postSubmission(
     {
       ...buildBaseRecord(input, 'newsletter'),
-      newsletter: true,
       payload: {
-        newsletter: true,
+        subscription: 'newsletter',
       },
     },
-    'newsletter',
-    true
+    'newsletter'
   );
 }

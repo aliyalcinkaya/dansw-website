@@ -57,11 +57,6 @@ create table if not exists public.newsletter_subscriptions (
   type text not null default 'newsletter' check (type = 'newsletter'),
   source text not null,
   email text not null,
-  name text,
-  company text,
-  message text,
-  newsletter boolean not null default true,
-  website text,
   mixpanel_anonymous_id text,
   user_agent text,
   page_path text,
@@ -71,6 +66,13 @@ create table if not exists public.newsletter_subscriptions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.newsletter_subscriptions
+  drop column if exists name,
+  drop column if exists company,
+  drop column if exists message,
+  drop column if exists newsletter;
+  drop column if exists website;
 
 create unique index if not exists newsletter_subscriptions_email_key
   on public.newsletter_subscriptions (email);
