@@ -2,8 +2,6 @@
 
 A modern, responsive website for Sydney's premier data and analytics community.
 
-**Live site:** [https://aliyalcinkaya.github.io/dansw-website/](https://aliyalcinkaya.github.io/dansw-website/)
-
 ## Features
 
 - **Upcoming Events**: Live Eventbrite integration showing upcoming meetups
@@ -25,8 +23,7 @@ A modern, responsive website for Sydney's premier data and analytics community.
 - **TypeScript** - Type safety
 - **Tailwind CSS 4** - Styling
 - **Vite 7** - Build tool
-- **React Router 7** - Client-side routing (HashRouter for GitHub Pages)
-- **GitHub Pages** - Hosting
+- **React Router 7** - Client-side routing
 
 ## Getting Started
 
@@ -63,7 +60,7 @@ npm install
 npm run dev
 ```
 
-The site will be available at `http://localhost:5173/dansw-website/`
+The site will be available at `http://localhost:5173/`
 
 ### Build
 
@@ -79,23 +76,9 @@ npm run preview
 
 ## 🚀 Deployment
 
-This site is configured for automatic deployment to GitHub Pages.
+GitHub Actions now runs a build-only workflow and uploads the `dist/` artifact (`website-dist`) on push to `main`.
 
-### Automatic Deployment
-
-Push to the `main` branch and GitHub Actions will automatically build and deploy.
-
-### Manual Deployment
-
-```bash
-npm run deploy
-```
-
-### GitHub Pages Setup
-
-1. Go to your repository Settings > Pages
-2. Under "Build and deployment", select "GitHub Actions"
-3. Push to main to trigger deployment
+Deploy that artifact to your target platform (for example Vercel, Netlify, Cloudflare Pages, S3/CloudFront, or your own hosting pipeline).
 
 ## Configuration
 
