@@ -4,9 +4,10 @@ import { Logo } from './Logo';
 
 const navLinks = [
   { path: '/', label: 'Home' },
-  { path: '/previous-talks', label: 'Previous Talks' },
+  { path: '/about', label: 'About' },
+  { path: '/events', label: 'Events' },
+  { path: '/jobs', label: 'Jobs' },
   { path: '/become-a-speaker', label: 'Become a Speaker' },
-  { path: '/join', label: 'Become a Member' },
 ];
 
 export function Navigation() {
@@ -92,7 +93,3 @@ export function Navigation() {
     </nav>
   );
 }
-
-
-
-

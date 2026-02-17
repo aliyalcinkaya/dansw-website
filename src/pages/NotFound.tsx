@@ -20,7 +20,7 @@ export function NotFound() {
             </svg>
           </Link>
           <Link
-            to="/previous-talks"
+            to="/events"
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text)] font-semibold hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
           >
             View Events

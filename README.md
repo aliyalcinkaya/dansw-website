@@ -5,6 +5,8 @@ A modern, responsive website for Sydney's premier data and analytics community.
 ## Features
 
 - **Upcoming Events**: Live Eventbrite integration showing upcoming meetups
+- **Job Board**: Community job listings, role details, and apply flows
+- **LinkedIn News**: Embedded LinkedIn posts on the homepage
 - **Previous Talks**: Archive of past presentations with search and filtering
 - **Become a Member**: Membership application form with conditional fields
 - **Become a Speaker**: Speaker proposal submission form
@@ -39,10 +41,19 @@ Create a `.env` file in the root directory:
 ```bash
 VITE_EVENTBRITE_PRIVATE_TOKEN=your_eventbrite_api_token
 VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
+VITE_LINKEDIN_POST_URLS=https://www.linkedin.com/feed/update/urn:li:activity:123...,https://www.linkedin.com/posts/your-page_activity-456...
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 VITE_SUPABASE_FORMS_TABLE=form_submissions
 VITE_SUPABASE_NEWSLETTER_TABLE=newsletter_subscriptions
+VITE_SUPABASE_JOBS_TABLE=job_posts
+VITE_SUPABASE_JOB_APPLICATIONS_TABLE=job_applications
+VITE_SUPABASE_JOB_ADMIN_NOTIFICATIONS_TABLE=job_admin_notifications
+VITE_SUPABASE_SITE_SETTINGS_TABLE=site_settings
+VITE_STRIPE_CHECKOUT_ENDPOINT=https://your-api.example.com/create-job-checkout # optional
+VITE_STRIPE_STANDARD_PAYMENT_LINK=https://buy.stripe.com/your_standard_link     # optional fallback
+VITE_STRIPE_AMPLIFIED_PAYMENT_LINK=https://buy.stripe.com/your_amplified_link   # optional fallback
+VITE_BRANDFETCH_API_KEY=your_brandfetch_api_key_here                              # optional (job branding)
 VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here # optional
 ```
 
@@ -91,6 +102,15 @@ VITE_EVENTBRITE_PRIVATE_TOKEN=your_token_here
 VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
 ```
 
+### LinkedIn News Embeds
+
+The homepage LinkedIn section can be managed in the admin panel (`/admin`) or via
+`VITE_LINKEDIN_POST_URLS` as fallback. Provide comma-separated post URLs (or `urn:li` values):
+
+```bash
+VITE_LINKEDIN_POST_URLS=https://www.linkedin.com/feed/update/urn:li:activity:123...,https://www.linkedin.com/posts/your-page_activity-456...
+```
+
 ### Supabase Form Backend
 
 Website forms submit to Supabase using two tables:
@@ -112,6 +132,57 @@ Optional (for form submit analytics to Mixpanel):
 
 ```bash
 VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here
+```
+
+### Job Board Backend
+
+Job posting and easy-apply data is stored in Supabase:
+- `job_posts`: draft and published job listings
+- `job_applications`: Easy Apply submissions
+- `job_admin_notifications`: moderation and expiry notifications
+- `site_settings`: website content settings (for example homepage LinkedIn links)
+
+1. In Supabase SQL Editor, run `supabase/jobs.sql`.
+2. Add these env vars:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_SUPABASE_JOBS_TABLE=job_posts
+VITE_SUPABASE_JOB_APPLICATIONS_TABLE=job_applications
+VITE_SUPABASE_JOB_ADMIN_NOTIFICATIONS_TABLE=job_admin_notifications
+VITE_SUPABASE_SITE_SETTINGS_TABLE=site_settings
+```
+
+3. Add admin emails (can manage via `/admin`, including `/admin/jobs`):
+
+```sql
+insert into public.job_board_admins (email) values ('you@company.com');
+```
+
+Admin magic-link sign-in only works for emails present in `job_board_admins`.
+
+Publish payment options:
+
+```bash
+# Preferred: secure backend endpoint creates Stripe Checkout sessions
+VITE_STRIPE_CHECKOUT_ENDPOINT=https://your-api.example.com/create-job-checkout
+
+# Optional fallback: direct Stripe Payment Links
+VITE_STRIPE_STANDARD_PAYMENT_LINK=https://buy.stripe.com/your_standard_link
+VITE_STRIPE_AMPLIFIED_PAYMENT_LINK=https://buy.stripe.com/your_amplified_link
+```
+
+Temporary test mode (skip Stripe and submit directly to admin review):
+
+```bash
+VITE_JOBS_DISABLE_PAYMENTS=true
+```
+
+Optional branding enrichment for job cards and headers:
+
+```bash
+VITE_BRANDFETCH_API_KEY=your_brandfetch_api_key_here
 ```
 
 ### Base URL
@@ -142,6 +213,10 @@ export default defineConfig({
 │   │   └── usePastEvents.ts        # Fetch past events
 │   ├── pages/
 │   │   ├── Home.tsx          # Landing page with events
+│   │   ├── Jobs.tsx          # Job board listing page
+│   │   ├── JobDetail.tsx     # Job detail page
+│   │   ├── JobSubmit.tsx     # Job post submission + checkout flow
+│   │   ├── AdminJobs.tsx     # Admin moderation dashboard
 │   │   ├── PreviousTalks.tsx # Event archive with search
 │   │   ├── BecomeMember.tsx  # Membership + volunteer form
 │   │   ├── BecomeSpeaker.tsx # Speaker proposal form
@@ -153,14 +228,17 @@ export default defineConfig({
 │   ├── services/
 │   │   ├── eventbrite.ts     # Eventbrite API integration
 │   │   ├── forms.ts          # Supabase form submission client
+│   │   ├── jobs.ts           # Job board and application services
 │   │   └── analytics.ts      # Optional Mixpanel form analytics
 │   ├── types/
-│   │   └── eventbrite.ts     # TypeScript types
+│   │   ├── eventbrite.ts     # Eventbrite type definitions
+│   │   └── jobs.ts           # Job board type definitions
 │   ├── App.tsx               # Router with lazy loading
 │   ├── main.tsx              # Entry point
 │   └── index.css             # Global styles & Tailwind
 └── supabase/
-    └── forms.sql             # Supabase table + RLS policy
+    ├── forms.sql             # Form submission tables + RLS policies
+    └── jobs.sql              # Job board tables + RLS policies
 ```
 
 ## 🎨 Customization

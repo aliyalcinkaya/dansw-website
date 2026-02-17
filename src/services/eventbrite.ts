@@ -4,6 +4,16 @@ import type { EventbriteEvent, EventbriteEventsResponse, DisplayEvent } from '..
 const EVENTBRITE_API_BASE = 'https://www.eventbriteapi.com/v3';
 const PRIVATE_TOKEN = import.meta.env.VITE_EVENTBRITE_PRIVATE_TOKEN;
 const ORGANIZATION_ID = import.meta.env.VITE_EVENTBRITE_ORGANIZATION_ID || '8179498448';
+const ALL_EVENTS_CACHE_KEY = 'eventbrite_all_events_cache_v1';
+const ALL_EVENTS_CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes
+
+interface CachedEventsPayload {
+  cachedAt: number;
+  events: DisplayEvent[];
+}
+
+let allEventsMemoryCache: CachedEventsPayload | null = null;
+let allEventsRequestPromise: Promise<DisplayEvent[]> | null = null;
 
 /**
  * Formats a date string for display
@@ -59,6 +69,7 @@ function transformEvent(event: EventbriteEvent): DisplayEvent {
     id: event.id,
     title: event.name.text,
     date: formatted,
+    startLocal: event.start.local,
     time: formatEventTime(event.start.local, event.end.local),
     location: event.venue?.address?.localized_address_display || 'Sydney CBD',
     description: event.description.text?.substring(0, 200) + (event.description.text?.length > 200 ? '...' : '') || '',
@@ -71,72 +82,143 @@ function transformEvent(event: EventbriteEvent): DisplayEvent {
 }
 
 /**
- * Fetches upcoming events from Eventbrite
- * Includes live, started, and draft events that are in the future
- * Falls back to showing most recent past events if no upcoming events
+ * Detects whether browser storage is available.
  */
-export async function fetchUpcomingEvents(): Promise<DisplayEvent[]> {
-  if (!PRIVATE_TOKEN) {
-    console.warn('Eventbrite API token not configured');
-    return [];
+function canUseStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+}
+
+function isCacheFresh(cachedAt: number): boolean {
+  return Date.now() - cachedAt < ALL_EVENTS_CACHE_TTL_MS;
+}
+
+function sortByStartDesc(events: DisplayEvent[]): DisplayEvent[] {
+  return [...events].sort(
+    (a, b) => new Date(b.startLocal).getTime() - new Date(a.startLocal).getTime()
+  );
+}
+
+function sortByStartAsc(events: DisplayEvent[]): DisplayEvent[] {
+  return [...events].sort(
+    (a, b) => new Date(a.startLocal).getTime() - new Date(b.startLocal).getTime()
+  );
+}
+
+/**
+ * Recomputes upcoming status on read so cached data does not go stale
+ * as time passes.
+ */
+function withCurrentUpcomingStatus(events: DisplayEvent[]): DisplayEvent[] {
+  const now = Date.now();
+  return events.map((event) => ({
+    ...event,
+    isUpcoming: new Date(event.startLocal).getTime() > now,
+  }));
+}
+
+function readAllEventsFromStorage(): CachedEventsPayload | null {
+  if (!canUseStorage()) {
+    return null;
   }
 
   try {
-    // First try to get live/upcoming events
-    const params = new URLSearchParams({
-      status: 'live,started,draft',
-      order_by: 'start_asc',
-      expand: 'venue',
-    });
+    const raw = window.localStorage.getItem(ALL_EVENTS_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
 
-    const response = await fetch(
-      `${EVENTBRITE_API_BASE}/organizations/${ORGANIZATION_ID}/events/?${params}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${PRIVATE_TOKEN}`,
-        },
-      }
+    const parsed = JSON.parse(raw) as CachedEventsPayload;
+    if (!parsed || !Array.isArray(parsed.events) || typeof parsed.cachedAt !== 'number') {
+      return null;
+    }
+
+    const hasInvalidEventShape = parsed.events.some(
+      (event) => !event || typeof event.startLocal !== 'string'
     );
-
-    if (!response.ok) {
-      throw new Error(`Eventbrite API error: ${response.status} ${response.statusText}`);
+    if (hasInvalidEventShape) {
+      return null;
     }
 
-    const data: EventbriteEventsResponse = await response.json();
-    
-    // Filter for upcoming events only (future dates)
-    const upcomingEvents = data.events
-      .map(transformEvent)
-      .filter(event => event.isUpcoming);
-    
-    // If we have upcoming events, return them
-    if (upcomingEvents.length > 0) {
-      return upcomingEvents;
+    if (!isCacheFresh(parsed.cachedAt)) {
+      return null;
     }
 
-    // No upcoming events - fetch the most recent past event to show
-    const allParams = new URLSearchParams({
-      order_by: 'start_desc',
-      expand: 'venue',
-    });
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
-    const allResponse = await fetch(
-      `${EVENTBRITE_API_BASE}/organizations/${ORGANIZATION_ID}/events/?${allParams}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${PRIVATE_TOKEN}`,
-        },
-      }
-    );
+function writeAllEventsToStorage(payload: CachedEventsPayload): void {
+  if (!canUseStorage()) {
+    return;
+  }
 
-    if (!allResponse.ok) {
-      return [];
+  try {
+    window.localStorage.setItem(ALL_EVENTS_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage write failures (private mode / quota exceeded).
+  }
+}
+
+async function fetchAllEventsFromApi(): Promise<DisplayEvent[]> {
+  const params = new URLSearchParams({
+    order_by: 'start_desc',
+    expand: 'venue',
+  });
+
+  const response = await fetch(
+    `${EVENTBRITE_API_BASE}/organizations/${ORGANIZATION_ID}/events/?${params}`,
+    {
+      headers: {
+        Authorization: `Bearer ${PRIVATE_TOKEN}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Eventbrite API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data: EventbriteEventsResponse = await response.json();
+  return sortByStartDesc(data.events.map(transformEvent));
+}
+
+async function getAllEventsCached(forceRefresh = false): Promise<DisplayEvent[]> {
+  if (!forceRefresh) {
+    if (allEventsMemoryCache && isCacheFresh(allEventsMemoryCache.cachedAt)) {
+      return withCurrentUpcomingStatus(allEventsMemoryCache.events);
     }
 
-    const allData: EventbriteEventsResponse = await allResponse.json();
-    
-    // Return the most recent event (even if past) so users can see what events look like
-    return allData.events.slice(0, 1).map(transformEvent);
+    const storedCache = readAllEventsFromStorage();
+    if (storedCache) {
+      allEventsMemoryCache = storedCache;
+      return withCurrentUpcomingStatus(storedCache.events);
+    }
+
+    if (allEventsRequestPromise) {
+      const inFlightEvents = await allEventsRequestPromise;
+      return withCurrentUpcomingStatus(inFlightEvents);
+    }
+  }
+
+  try {
+    allEventsRequestPromise = fetchAllEventsFromApi()
+      .then((events) => {
+        const payload: CachedEventsPayload = {
+          cachedAt: Date.now(),
+          events,
+        };
+        allEventsMemoryCache = payload;
+        writeAllEventsToStorage(payload);
+        return payload.events;
+      })
+      .finally(() => {
+        allEventsRequestPromise = null;
+      });
+
+    const events = await allEventsRequestPromise;
+    return withCurrentUpcomingStatus(events);
   } catch (error) {
     console.error('Failed to fetch Eventbrite events:', error);
     throw error;
@@ -144,35 +226,37 @@ export async function fetchUpcomingEvents(): Promise<DisplayEvent[]> {
 }
 
 /**
- * Fetches all events (including past) from Eventbrite
+ * Fetches upcoming events from Eventbrite.
+ * Uses cached event list and returns upcoming events sorted soonest first.
  */
-export async function fetchAllEvents(): Promise<DisplayEvent[]> {
+export async function fetchUpcomingEvents(forceRefresh = false): Promise<DisplayEvent[]> {
   if (!PRIVATE_TOKEN) {
     console.warn('Eventbrite API token not configured');
     return [];
   }
 
   try {
-    const params = new URLSearchParams({
-      order_by: 'start_desc',
-      expand: 'venue',
-    });
+    const allEvents = await fetchAllEvents(forceRefresh);
+    const upcomingEvents = sortByStartAsc(allEvents.filter((event) => event.isUpcoming));
+    return upcomingEvents;
+  } catch (error) {
+    console.error('Failed to fetch Eventbrite events:', error);
+    throw error;
+  }
+}
 
-    const response = await fetch(
-      `${EVENTBRITE_API_BASE}/organizations/${ORGANIZATION_ID}/events/?${params}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${PRIVATE_TOKEN}`,
-        },
-      }
-    );
+/**
+ * Fetches all events (including past) from Eventbrite.
+ */
+export async function fetchAllEvents(forceRefresh = false): Promise<DisplayEvent[]> {
+  if (!PRIVATE_TOKEN) {
+    console.warn('Eventbrite API token not configured');
+    return [];
+  }
 
-    if (!response.ok) {
-      throw new Error(`Eventbrite API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data: EventbriteEventsResponse = await response.json();
-    return data.events.map(transformEvent);
+  try {
+    const events = await getAllEventsCached(forceRefresh);
+    return sortByStartDesc(events);
   } catch (error) {
     console.error('Failed to fetch Eventbrite events:', error);
     throw error;

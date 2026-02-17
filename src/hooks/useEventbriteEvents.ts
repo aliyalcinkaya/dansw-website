@@ -14,12 +14,12 @@ export function useEventbriteEvents(): UseEventbriteEventsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     
     try {
-      const upcomingEvents = await fetchUpcomingEvents();
+      const upcomingEvents = await fetchUpcomingEvents(forceRefresh);
       setEvents(upcomingEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load events');
@@ -30,13 +30,15 @@ export function useEventbriteEvents(): UseEventbriteEventsResult {
   };
 
   useEffect(() => {
-    fetchEvents();
+    void fetchEvents();
   }, []);
 
   return {
     events,
     loading,
     error,
-    refetch: fetchEvents,
+    refetch: () => {
+      void fetchEvents(true);
+    },
   };
 }

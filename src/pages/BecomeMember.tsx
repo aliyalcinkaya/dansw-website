@@ -169,9 +169,9 @@ export function BecomeMember() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-3xl text-[var(--color-primary)] mb-4">Welcome to the community!</h2>
+          <h2 className="text-3xl text-[var(--color-primary)] mb-4">Thanks for volunteering!</h2>
           <p className="text-[var(--color-text-muted)] mb-8">
-            Thank you for joining DAWSydney. We'll be in touch soon with information about upcoming events.
+            Thank you for applying to volunteer with DAWSydney. We will be in touch soon.
           </p>
           <Link
             to="/"
@@ -191,254 +191,21 @@ export function BecomeMember() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
           <div className="max-w-3xl">
             <span className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">
-              Join Us
+              Volunteer
             </span>
             <h1 className="text-4xl md:text-5xl text-[var(--color-primary)] mt-2 mb-6">
-              Join Our Community
+              Volunteer With DAWSydney
             </h1>
             <p className="text-lg text-[var(--color-text-muted)] leading-relaxed">
-              Join Digital Analytics NSW Inc and become part of Sydney's most vibrant 
-              data and analytics community. Become a member or volunteer to help us grow.
+              Help run events, support speakers, and grow Sydney's data and analytics community.
+              Choose where you can contribute and apply below.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Form Section */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Benefits */}
-            <div className="order-2 lg:order-1">
-              <h2 className="text-2xl text-[var(--color-primary)] mb-6">
-                Member Benefits
-              </h2>
-              
-              <div className="space-y-4">
-                {[
-                  {
-                    icon: '📅',
-                    title: 'Priority Event Access',
-                    description: 'Get early access to RSVP for our monthly meetups and special events.',
-                  },
-                  {
-                    icon: '🗳️',
-                    title: 'Voting Rights',
-                    description: 'Have a say in how the community is run and what events we organize.',
-                  },
-                  {
-                    icon: '🤝',
-                    title: 'Networking Opportunities',
-                    description: 'Connect with leading professionals in the data and analytics industry.',
-                  },
-                  {
-                    icon: '📚',
-                    title: 'Exclusive Resources',
-                    description: 'Access member-only content, recordings, and learning materials.',
-                  },
-                  {
-                    icon: '🎤',
-                    title: 'Speaking Opportunities',
-                    description: 'Members get priority consideration for speaking slots at our events.',
-                  },
-                ].map((benefit, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 p-4 rounded-xl bg-white border border-[var(--color-border)]"
-                  >
-                    <span className="text-2xl">{benefit.icon}</span>
-                    <div>
-                      <h3 className="font-semibold text-[var(--color-primary)] mb-1">
-                        {benefit.title}
-                      </h3>
-                      <p className="text-sm text-[var(--color-text-muted)]">
-                        {benefit.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pricing */}
-              <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-chart-2)]/10 border border-[var(--color-accent)]/20">
-                <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-4">
-                  Membership Fees
-                </h3>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-bold text-[var(--color-accent)]">$3</span>
-                  <span className="text-[var(--color-text-muted)]">total to get started</span>
-                </div>
-                <ul className="text-sm text-[var(--color-text-muted)] space-y-1">
-                  <li>• $1 one-time signup fee</li>
-                  <li>• $2 annual membership fee</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="order-1 lg:order-2">
-              <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-6 md:p-8">
-                <h2 className="text-2xl text-[var(--color-primary)] mb-6">
-                  Membership Application
-                </h2>
-                
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <input
-                    type="text"
-                    name="website"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    className="hidden"
-                    aria-hidden="true"
-                  />
-
-                  {/* Name */}
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-
-                  {/* Profession */}
-                  <div>
-                    <label htmlFor="profession" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      What best describes you? *
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {[
-                        { value: 'student', label: 'Student', icon: '🎓' },
-                        { value: 'professional', label: 'Professional', icon: '💼' },
-                        { value: 'looking', label: 'Job Seeking', icon: '🔍' },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, profession: option.value as Profession, institution: '' })}
-                          className={`p-4 rounded-lg border text-center transition-all ${
-                            formData.profession === option.value
-                              ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5 ring-2 ring-[var(--color-accent)]'
-                              : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
-                          }`}
-                        >
-                          <span className="text-2xl mb-2 block">{option.icon}</span>
-                          <span className={`text-sm font-medium ${
-                            formData.profession === option.value 
-                              ? 'text-[var(--color-accent)]' 
-                              : 'text-[var(--color-text)]'
-                          }`}>
-                            {option.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Institution (conditional) */}
-                  {formData.profession && (
-                    <div className="animate-fade-in-up">
-                      <label htmlFor="institution" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                        {getInstitutionLabel()} {formData.profession !== 'looking' && '*'}
-                      </label>
-                      <input
-                        type="text"
-                        id="institution"
-                        required={formData.profession !== 'looking'}
-                        value={formData.institution}
-                        onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                        placeholder={getInstitutionPlaceholder()}
-                      />
-                    </div>
-                  )}
-
-                  {/* Goals */}
-                  <div>
-                    <label htmlFor="goals" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      What are you hoping to get out of the community? *
-                    </label>
-                    <textarea
-                      id="goals"
-                      required
-                      rows={4}
-                      value={formData.goals}
-                      onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all resize-none"
-                      placeholder="e.g., Networking with other professionals, learning new skills, finding job opportunities..."
-                    />
-                  </div>
-
-                  {/* Submit */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !formData.profession}
-                    className="w-full py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        Submit Application
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-
-                  {submitError && (
-                    <p className="text-sm text-red-600 text-center" role="status">
-                      {submitError}
-                    </p>
-                  )}
-
-                  <p className="text-xs text-[var(--color-text-muted)] text-center">
-                    By submitting this form, you agree to our{' '}
-                    <a href="/code-of-conduct" className="text-[var(--color-accent)] hover:underline">
-                      Code of Conduct
-                    </a>.
-                  </p>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Get Involved Section */}
-      <section id="volunteer" className="py-12 md:py-20 bg-white border-t border-[var(--color-border)]">
+      <section id="volunteer" className="py-12 md:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <span className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">
@@ -482,24 +249,184 @@ export function BecomeMember() {
             ))}
           </div>
 
+          <div id="volunteer-application" className="mt-12 max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-6 md:p-8">
+              <h3 className="text-2xl text-[var(--color-primary)] mb-2">
+                Apply to become a volunteer
+              </h3>
+              <p className="text-[var(--color-text-muted)] mb-6">
+                Tell us a little about yourself and how you would like to help.
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <input
+                  type="text"
+                  name="website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="hidden"
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="profession" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    What best describes you? *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { value: 'student', label: 'Student', icon: '🎓' },
+                      { value: 'professional', label: 'Professional', icon: '💼' },
+                      { value: 'looking', label: 'Job Seeking', icon: '🔍' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, profession: option.value as Profession, institution: '' })}
+                        className={`p-4 rounded-lg border text-center transition-all ${
+                          formData.profession === option.value
+                            ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5 ring-2 ring-[var(--color-accent)]'
+                            : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
+                        }`}
+                      >
+                        <span className="text-2xl mb-2 block">{option.icon}</span>
+                        <span className={`text-sm font-medium ${
+                          formData.profession === option.value
+                            ? 'text-[var(--color-accent)]'
+                            : 'text-[var(--color-text)]'
+                        }`}>
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {formData.profession && (
+                  <div className="animate-fade-in-up">
+                    <label htmlFor="institution" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                      {getInstitutionLabel()} {formData.profession !== 'looking' && '*'}
+                    </label>
+                    <input
+                      type="text"
+                      id="institution"
+                      required={formData.profession !== 'looking'}
+                      value={formData.institution}
+                      onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                      placeholder={getInstitutionPlaceholder()}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="goals" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                    How would you like to contribute? *
+                  </label>
+                  <textarea
+                    id="goals"
+                    required
+                    rows={4}
+                    value={formData.goals}
+                    onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all resize-none"
+                    placeholder="e.g., Helping with event logistics, content, sponsors, or website updates..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !formData.profession}
+                  className="w-full py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Submit Volunteer Application
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+
+                {submitError && (
+                  <p className="text-sm text-red-600 text-center" role="status">
+                    {submitError}
+                  </p>
+                )}
+
+                <p className="text-xs text-[var(--color-text-muted)] text-center">
+                  By submitting this form, you agree to our{' '}
+                  <a href="/code-of-conduct" className="text-[var(--color-accent)] hover:underline">
+                    Code of Conduct
+                  </a>.
+                </p>
+              </form>
+            </div>
+          </div>
+
           {/* CTA */}
           <div className="mt-12 text-center">
             <div className="bg-gradient-to-br from-[var(--color-primary)] to-slate-800 rounded-3xl p-8 md:p-12 text-white">
               <h3 className="text-2xl md:text-3xl mb-4">
-                Ready to make a difference?
+                Want to share your story on stage?
               </h3>
               <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                We'd love to hear from you! Reach out to learn more about how you can contribute.
+                Speaking is one of the best ways to contribute to the community. Volunteer applications are open too.
               </p>
-              <a
-                href="mailto:hello@dawsydney.org.au?subject=I'd like to get involved"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-primary)] font-semibold hover:bg-[var(--color-accent)] hover:text-white transition-all"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Get in Touch
-              </a>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/become-a-speaker"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
+                >
+                  Become a Speaker
+                </Link>
+                <a
+                  href="#volunteer-application"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-white/40 text-white font-semibold hover:bg-white/10 transition-all"
+                >
+                  Apply to Volunteer
+                </a>
+              </div>
             </div>
           </div>
         </div>

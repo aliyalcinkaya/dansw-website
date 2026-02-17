@@ -14,12 +14,12 @@ export function usePastEvents(): UsePastEventsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     
     try {
-      const allEvents = await fetchAllEvents();
+      const allEvents = await fetchAllEvents(forceRefresh);
       // Filter for past events only
       const pastEvents = allEvents.filter(event => !event.isUpcoming);
       setEvents(pastEvents);
@@ -32,13 +32,15 @@ export function usePastEvents(): UsePastEventsResult {
   };
 
   useEffect(() => {
-    fetchEvents();
+    void fetchEvents();
   }, []);
 
   return {
     events,
     loading,
     error,
-    refetch: fetchEvents,
+    refetch: () => {
+      void fetchEvents(true);
+    },
   };
 }

@@ -1,45 +1,6 @@
-import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { submitNewsletterSubscription } from '../services/forms';
 
 export function Footer() {
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [website, setWebsite] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [statusMessage, setStatusMessage] = useState('');
-
-  const handleNewsletterSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setStatus('idle');
-    setStatusMessage('');
-
-    try {
-      const result = await submitNewsletterSubscription({
-        source: 'footer',
-        email: newsletterEmail,
-        website,
-      });
-
-      if (!result.ok) {
-        setStatus('error');
-        setStatusMessage(result.message ?? 'Unable to subscribe right now.');
-        return;
-      }
-
-      setStatus('success');
-      setStatusMessage('Subscribed. You will receive updates on events and community news.');
-      setNewsletterEmail('');
-      setWebsite('');
-    } catch {
-      setStatus('error');
-      setStatusMessage('Network error while subscribing. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <footer className="bg-[var(--color-primary)] text-white mt-auto">
       {/* Main footer content */}
@@ -48,20 +9,14 @@ export function Footer() {
           {/* Brand column */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10">
-                <svg viewBox="0 0 40 40" className="w-full h-full">
-                  <rect width="40" height="40" rx="8" fill="white" fillOpacity="0.1" />
-                  <g fill="white">
-                    <rect x="7" y="22" width="5" height="11" rx="1.5" />
-                    <rect x="14" y="17" width="5" height="16" rx="1.5" />
-                    <rect x="21" y="12" width="5" height="21" rx="1.5" />
-                    <rect x="28" y="7" width="5" height="26" rx="1.5" opacity="0.7" />
-                  </g>
-                </svg>
-              </div>
+              <img
+                src="/Data-and-analytics-transparent.png"
+                alt="Data & Analytics Wednesday Sydney logo"
+                className="h-14 rounded-md object-contain"
+              />
               <div>
-                <span className="text-lg font-semibold">DAWSydney</span>
-                <p className="text-xs text-white/60 uppercase tracking-wider">Data & Analytics Wednesday</p>
+                <span className="text-lg font-semibold">Data & Analytics Wednesday</span>
+                <p className="text-xs text-white/60 uppercase tracking-wider">Sydney</p>
               </div>
             </div>
             <p className="text-white/70 text-sm max-w-sm leading-relaxed">
@@ -77,8 +32,13 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/previous-talks" className="text-white/60 hover:text-white text-sm transition-colors">
-                  Previous Talks
+                <Link to="/jobs" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Jobs
+                </Link>
+              </li>
+              <li>
+                <Link to="/events" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Events
                 </Link>
               </li>
               <li>
@@ -93,7 +53,7 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/join" className="text-white/60 hover:text-white text-sm transition-colors">
-                  Become a Member
+                  Volunteer
                 </Link>
               </li>
             </ul>
@@ -116,60 +76,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/join#volunteer" className="text-white/60 hover:text-white text-sm transition-colors">
-                  Become a Volunteer
+                <Link to="/privacy-policy" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Privacy Policy
                 </Link>
               </li>
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Newsletter Section */}
-      <div className="border-t border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <h4 className="text-lg font-semibold mb-1">Stay in the loop</h4>
-              <p className="text-white/60 text-sm">Get updates on upcoming events and community news.</p>
-            </div>
-            <form className="w-full md:w-auto" onSubmit={handleNewsletterSubmit}>
-              <input
-                type="text"
-                name="website"
-                value={website}
-                onChange={(event) => setWebsite(event.target.value)}
-                tabIndex={-1}
-                autoComplete="off"
-                className="hidden"
-                aria-hidden="true"
-              />
-              <div className="flex w-full md:w-auto gap-3">
-                <input
-                  type="email"
-                  value={newsletterEmail}
-                  onChange={(event) => setNewsletterEmail(event.target.value)}
-                  placeholder="Enter your email"
-                  className="flex-grow md:w-64 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:border-white/40 focus:bg-white/15 transition-colors"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium hover:bg-[var(--color-accent-light)] transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Subscribe'}
-                </button>
-              </div>
-              {status !== 'idle' && (
-                <p
-                  className={`text-sm mt-2 ${status === 'success' ? 'text-emerald-300' : 'text-red-300'}`}
-                  role="status"
-                >
-                  {statusMessage}
-                </p>
-              )}
-            </form>
           </div>
         </div>
       </div>
@@ -184,7 +95,7 @@ export function Footer() {
             <div className="flex items-center gap-4">
               {/* Social links */}
               <a
-                href="http://linkedin.com/groups/4903479/"
+                href="https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/50 hover:text-white transition-colors"

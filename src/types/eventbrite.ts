@@ -63,6 +63,7 @@ export interface DisplayEvent {
   id: string;
   title: string;
   date: string;
+  startLocal: string;
   time: string;
   location: string;
   description: string;

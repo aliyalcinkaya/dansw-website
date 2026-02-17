@@ -1,16 +1,23 @@
 import { lazy, Suspense } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { Home } from './pages';
 
 // Lazy load non-critical routes
-const PreviousTalks = lazy(() => import('./pages/PreviousTalks').then(m => ({ default: m.PreviousTalks })));
+const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
+const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
+const JobPostPlans = lazy(() => import('./pages/JobPostPlans').then(m => ({ default: m.JobPostPlans })));
+const JobDetail = lazy(() => import('./pages/JobDetail').then(m => ({ default: m.JobDetail })));
+const JobSubmit = lazy(() => import('./pages/JobSubmit').then(m => ({ default: m.JobSubmit })));
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const AdminJobs = lazy(() => import('./pages/AdminJobs').then(m => ({ default: m.AdminJobs })));
 const BecomeMember = lazy(() => import('./pages/BecomeMember').then(m => ({ default: m.BecomeMember })));
 const BecomeSpeaker = lazy(() => import('./pages/BecomeSpeaker').then(m => ({ default: m.BecomeSpeaker })));
 const BecomeSponsor = lazy(() => import('./pages/BecomeSponsor').then(m => ({ default: m.BecomeSponsor })));
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
 const CodeOfConduct = lazy(() => import('./pages/CodeOfConduct').then(m => ({ default: m.CodeOfConduct })));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 
 function PageLoader() {
@@ -28,14 +35,25 @@ function PageLoader() {
 }
 
 function App() {
+  const basename = import.meta.env.BASE_URL || '/';
+
   return (
-    <Router>
+    <Router basename={basename}>
       <ScrollToTop />
       <Layout>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/previous-talks" element={<PreviousTalks />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/event" element={<Navigate to="/events" replace />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/post" element={<JobPostPlans />} />
+            <Route path="/jobs/submit" element={<JobSubmit />} />
+            <Route path="/jobs/:slug" element={<JobDetail />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin/jobs" element={<AdminJobs />} />
+            <Route path="/job-board" element={<Navigate to="/jobs" replace />} />
+            <Route path="/previous-talks" element={<Navigate to="/events" replace />} />
             <Route path="/join" element={<BecomeMember />} />
             <Route path="/become-a-member" element={<Navigate to="/join" replace />} />
             <Route path="/get-involved" element={<Navigate to="/join#volunteer" replace />} />
@@ -43,6 +61,7 @@ function App() {
             <Route path="/become-a-sponsor" element={<BecomeSponsor />} />
             <Route path="/about" element={<About />} />
             <Route path="/code-of-conduct" element={<CodeOfConduct />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

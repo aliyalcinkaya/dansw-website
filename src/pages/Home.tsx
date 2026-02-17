@@ -1,9 +1,10 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useEventbriteEvents } from '../hooks/useEventbriteEvents';
-
-// Import event photos
-import eventPhoto1 from '../assets/event_photos/eb6zidzueaajfa4-orig_orig.jpg';
-import eventPhoto2 from '../assets/event_photos/pxl-20240214-073532395_orig.jpg';
+import { getLinkedInEmbedPosts, getLinkedInEmbedPostsFromInputs } from '../services/linkedin';
+import { fetchLinkedInPostUrls } from '../services/siteSettings';
+import { UpcomingEventsSection } from '../components/UpcomingEventsSection';
+import { NewsletterSignup } from '../components/NewsletterSignup';
 
 // Import sponsor logos
 import canvaLogo from '../assets/sponsor_logos/canva.png';
@@ -11,8 +12,82 @@ import imwtLogo from '../assets/sponsor_logos/imwt.webp';
 import metriclabsLogo from '../assets/sponsor_logos/metriclabs.png';
 import snowplowLogo from '../assets/sponsor_logos/snowplow.png';
 
+const avatarImagePaths = Object.keys(
+  import.meta.glob('/public/avatar/*.{jpg,jpeg,png,webp,avif,gif}'),
+).map((path) => path.replace('/public', ''));
+
+const memberPhotoPaths = Object.keys(
+  import.meta.glob('/public/member_photos/*.{jpg,jpeg,png,webp,avif,gif}'),
+).map((path) => path.replace('/public', ''));
+
+const heroCollagePhotoClasses = [
+  'absolute left-1/2 top-1/2 w-64 h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-2xl -rotate-6 z-20 -translate-x-[96%] -translate-y-[72%] animate-fade-in-up animate-delay-100',
+  'absolute left-1/2 top-1/2 w-72 h-72 lg:w-80 lg:h-80 rounded-2xl overflow-hidden shadow-2xl rotate-4 z-30 -translate-x-[6%] -translate-y-[60%] animate-fade-in-up animate-delay-200',
+  'absolute left-1/2 top-1/2 w-60 h-60 lg:w-[17rem] lg:h-[17rem] rounded-2xl overflow-hidden shadow-2xl -rotate-3 z-10 -translate-x-[56%] -translate-y-[2%] animate-fade-in-up animate-delay-300',
+];
+
+function pickRandomAvatars(images: string[], count: number) {
+  const shuffled = [...images];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+}
+
 export function Home() {
   const { events, loading, error } = useEventbriteEvents();
+  const slackInviteUrl = 'https://join.measure.chat';
+  const linkedinCompanyUrl = 'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all';
+  const heroAvatars = useMemo(() => pickRandomAvatars(avatarImagePaths, 8), []);
+  const heroCollagePhotos = useMemo(
+    () => pickRandomAvatars(memberPhotoPaths, heroCollagePhotoClasses.length),
+    [],
+  );
+  const rotatingMemberPhotos = useMemo(
+    () => pickRandomAvatars(memberPhotoPaths, memberPhotoPaths.length),
+    [],
+  );
+  const [memberPhotoIndex, setMemberPhotoIndex] = useState(0);
+  const [linkedinPosts, setLinkedinPosts] = useState(() => getLinkedInEmbedPosts(3));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLinkedInPosts = async () => {
+      const result = await fetchLinkedInPostUrls();
+      if (cancelled) {
+        return;
+      }
+
+      setLinkedinPosts(getLinkedInEmbedPostsFromInputs(result.data, 3));
+    };
+
+    void loadLinkedInPosts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (rotatingMemberPhotos.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setMemberPhotoIndex((current) => (current + 1) % rotatingMemberPhotos.length);
+    }, 3500);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [rotatingMemberPhotos]);
+
+  const currentMemberPhoto =
+    rotatingMemberPhotos[memberPhotoIndex] ?? '/member_photos/1000022844.jpg';
 
   return (
     <div>
@@ -20,204 +95,190 @@ export function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-[var(--color-surface)] via-white to-blue-50">
         {/* Background decoration */}
         <div className="absolute inset-0 data-dots"></div>
-        {/* Event photos collage */}
-        <div className="absolute top-0 right-0 w-1/2 h-full hidden md:flex items-center justify-center p-8">
-          <div className="relative w-full max-w-md">
-            <div className="absolute -top-4 -right-4 w-48 h-48 lg:w-64 lg:h-64 rounded-2xl overflow-hidden shadow-2xl rotate-6 animate-fade-in-up">
-              <img src={eventPhoto1} alt="DAW Sydney Event" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute top-20 -left-8 w-56 h-56 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-2xl -rotate-3 animate-fade-in-up animate-delay-200">
-              <img src={eventPhoto2} alt="DAW Sydney Event" className="w-full h-full object-cover" />
-            </div>
-          </div>
-        </div>
-        
+
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-32">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-medium mb-6 animate-fade-in-up">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
-              </span>
-              Sydney's Premier Analytics Community
+          <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 items-center">
+            <div className="max-w-2xl relative z-30">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-medium mb-6 animate-fade-in-up">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
+                </span>
+                <a href="/jobs" className="text-[var(--color-accent)] hover:underline">Job Board is Live! See Open Roles</a>
+              </div>
+
+              <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6 animate-fade-in-up animate-delay-100">
+                Join Sydney's biggest {' '}
+                <span className="italic text-[var(--color-accent)]"> analytics</span>{' '}
+                community
+              </h1>
+
+              <p className="text-lg md:text-xl text-[var(--color-text-muted)] mb-8 leading-relaxed animate-fade-in-up animate-delay-200">
+                Informal meetup for web analytics, digital marketing optimization, digital advertising and related types to meet and catch up. Second Wednesday of each month.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-300">
+                <Link
+                  to="/events"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all hover:scale-105 shadow-lg shadow-[var(--color-accent)]/25"
+                >
+                  Join our Next Event
+                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <a
+                  href={slackInviteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
+                >
+                  Join Slack
+                  <img src="/slack_logo.png" alt="" aria-hidden="true" className="ml-2 w-5 h-5 object-contain" />
+                </a>
+              </div>
+
+              {heroAvatars.length > 0 && (
+                <div className="mt-6 flex items-center gap-3 animate-fade-in-up animate-delay-300">
+                  <div className="flex -space-x-4">
+                    {heroAvatars.map((avatarSrc, index) => (
+                      <img
+                        key={avatarSrc}
+                        src={avatarSrc}
+                        alt="Community member"
+                        className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm"
+                        style={{ zIndex: heroAvatars.length - index }}
+                        loading="lazy"
+                      />
+                    ))}
+                    <div className="flex h-11 w-16 items-center justify-center rounded-full border-2 border-white bg-[var(--color-surface-alt)] px-2 text-xs font-semibold text-[var(--color-primary)] shadow-sm">
+                      +7823
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-[var(--color-text-muted)]">
+                    community members
+                  </p>
+                </div>
+              )}
             </div>
-            
-            <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6 animate-fade-in-up animate-delay-100">
-              Join Sydney's biggest{' '}
-              <span className="italic text-[var(--color-accent)]">analytics</span>{' '}
-              community
-            </h1>
-            
-            <p className="text-lg md:text-xl text-[var(--color-text-muted)] mb-8 leading-relaxed animate-fade-in-up animate-delay-200">
-              Data & Analytics Wednesday brings together professionals, students, 
-              and enthusiasts every month to share knowledge, network, and grow together.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-300">
-              <Link
-                to="/join"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all hover:scale-105 shadow-lg shadow-[var(--color-accent)]/25"
-              >
-                Join the Community
-                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-              <Link
-                to="/previous-talks"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
-              >
-                View Previous Talks
-              </Link>
+
+            <div className="hidden md:flex items-center justify-center">
+              <div className="relative w-full max-w-[38rem] h-[34rem]">
+                {heroCollagePhotoClasses.map((className, index) => {
+                  const photoSrc = heroCollagePhotos[index];
+
+                  if (!photoSrc) {
+                    return null;
+                  }
+
+                  return (
+                    <div key={`${photoSrc}-${index}`} className={className}>
+                      <img src={photoSrc} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Upcoming Events Section */}
-      <section className="py-20 bg-[var(--color-surface)]">
+      <UpcomingEventsSection events={events} loading={loading} error={error} />
+
+      {/* LinkedIn News Section */}
+      <section className="py-20 bg-gradient-to-b from-white to-[var(--color-surface)] border-y border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl text-[var(--color-primary)] mb-4">
-              Upcoming Events
-            </h2>
-            <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto">
-              Don't miss our next meetup! We host events on the last Wednesday of every month.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+            <div>
+              <span className="inline-flex items-center gap-2 text-[#0A66C2] text-sm font-semibold uppercase tracking-wider">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-[#0A66C2] text-[10px] font-bold text-white">
+                  in
+                </span>
+                Community News
+              </span>
+              <h2 className="text-3xl md:text-4xl text-[var(--color-primary)] mt-2 mb-3">
+                Latest from LinkedIn
+              </h2>
+              <p className="text-[var(--color-text-muted)] max-w-2xl">
+                Fresh updates from our LinkedIn page, including meetup recaps and speaker announcements.
+              </p>
+            </div>
+            <a
+              href={linkedinCompanyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-[#bfd6ee] bg-white text-[#0A66C2] font-semibold hover:border-[#0A66C2] transition-all"
+            >
+              Follow on LinkedIn
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
           </div>
 
-          <div className="grid gap-6">
-            {/* Loading State */}
-            {loading && (
-              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8 text-center">
-                <div className="inline-flex items-center gap-3 text-[var(--color-text-muted)]">
-                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Loading upcoming events...
-                </div>
-              </div>
-            )}
+          {linkedinPosts.length > 0 ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => {
+                const post = linkedinPosts[index];
 
-            {/* Error State */}
-            {error && !loading && (
-              <div className="bg-white rounded-2xl border border-red-200 p-8">
-                <div className="text-center">
-                  <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p className="text-[var(--color-text-muted)] mb-4">Unable to load events at the moment.</p>
-                  <a
-                    href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-medium hover:bg-[var(--color-accent-light)] transition-all"
-                  >
-                    View Events on Eventbrite
-                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* No Events State */}
-            {!loading && !error && events.length === 0 && (
-              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8">
-                <div className="text-center">
-                  <svg className="w-12 h-12 text-[var(--color-text-muted)] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-lg text-[var(--color-primary)] mb-2">No upcoming events scheduled</p>
-                  <p className="text-[var(--color-text-muted)] mb-4">Check back soon for our next meetup!</p>
-                  <a
-                    href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-[var(--color-accent)] font-medium hover:underline"
-                  >
-                    View our Eventbrite page
-                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* Events List */}
-            {!loading && !error && events.map((event) => (
-              <div
-                key={event.id}
-                className="relative bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm hover:shadow-md transition-all group"
-              >
-                {/* Past Event Badge */}
-                {!event.isUpcoming && (
-                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
-                    Past Event
-                  </div>
-                )}
-                
-                <div className="flex flex-col md:flex-row md:items-center gap-6">
-                  {/* Date badge */}
-                  <div className={`flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white ${
-                    event.isUpcoming 
-                      ? 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)]' 
-                      : 'bg-gradient-to-br from-slate-400 to-slate-500'
-                  }`}>
-                    <span className="text-2xl font-bold">{event.dayOfMonth}</span>
-                    <span className="text-xs uppercase tracking-wider opacity-80">{event.month}</span>
-                  </div>
-                  
-                  {/* Event details */}
-                  <div className="flex-grow">
-                    <h3 className="text-xl md:text-2xl text-[var(--color-primary)] mb-2 group-hover:text-[var(--color-accent)] transition-colors">
-                      {event.title}
-                    </h3>
-                    <div className="flex flex-wrap gap-4 text-sm text-[var(--color-text-muted)]">
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {event.time}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {event.location}
-                      </span>
-                    </div>
-                    {event.description && (
-                      <p className="mt-3 text-[var(--color-text-muted)]">{event.description}</p>
-                    )}
-                  </div>
-                  
-                  {/* CTA */}
-                  <div className="flex-shrink-0">
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all ${
-                        event.isUpcoming
-                          ? 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
+                if (!post) {
+                  return (
+                    <article
+                      key={`linkedin-placeholder-${index + 1}`}
+                      className="overflow-hidden rounded-2xl border border-dashed border-[#bfd6ee] bg-[#f8fbff]"
                     >
-                      {event.isUpcoming ? 'Register Now' : 'View Event'}
-                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                      <div className="flex h-[420px] items-center justify-center px-6 text-center">
+                        <p className="text-sm text-[var(--color-text-muted)]">
+                          Add another LinkedIn post URL in the admin panel to fill this card.
+                        </p>
+                      </div>
+                    </article>
+                  );
+                }
+
+                return (
+                  <article
+                    key={post.id}
+                    className="overflow-hidden rounded-2xl border border-[#d7e2ef] bg-white shadow-[0_8px_26px_rgba(15,23,42,0.06)]"
+                  >
+                    <iframe
+                      src={post.embedUrl}
+                      title={`LinkedIn post ${post.id}`}
+                      className="w-full h-[420px] border-0 bg-white"
+                      loading="lazy"
+                      allowFullScreen
+                    />
+                    <div className="border-t border-[#e2e8f0] bg-[#f8fbff] px-4 py-3">
+                      <a
+                        href={post.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-sm font-semibold text-[#0A66C2] hover:underline"
+                      >
+                        View full post on LinkedIn
+                        <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-8">
+              <p className="text-[var(--color-primary)] mb-3">
+                LinkedIn embeds are ready. Add links in the admin panel (`/admin`) or set
+                `VITE_LINKEDIN_POST_URLS` as a fallback.
+              </p>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Use comma-separated URLs (or URNs), for example:
+              </p>
+              <code className="block mt-3 p-3 rounded-lg bg-white border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] overflow-x-auto">
+                VITE_LINKEDIN_POST_URLS=https://www.linkedin.com/feed/update/urn:li:activity:123...,https://www.linkedin.com/posts/your-page_activity-456...
+              </code>
+            </div>
+          )}
         </div>
       </section>
 
@@ -254,30 +315,13 @@ export function Home() {
             
             {/* Visual element */}
             <div className="relative">
-              <div className="aspect-square rounded-3xl bg-gradient-to-br from-[var(--color-accent)]/10 via-[var(--color-chart-2)]/10 to-[var(--color-chart-3)]/10 p-8">
-                <div className="w-full h-full rounded-2xl bg-white shadow-xl p-6 flex flex-col justify-center">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[var(--color-chart-1)]"></div>
-                      <div className="flex-grow h-4 rounded bg-[var(--color-chart-1)]/20"></div>
-                      <span className="text-sm font-mono text-[var(--color-text-muted)]">45%</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[var(--color-chart-2)]"></div>
-                      <div className="flex-grow h-4 rounded bg-[var(--color-chart-2)]/20" style={{ width: '70%' }}></div>
-                      <span className="text-sm font-mono text-[var(--color-text-muted)]">32%</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[var(--color-chart-3)]"></div>
-                      <div className="flex-grow h-4 rounded bg-[var(--color-chart-3)]/20" style={{ width: '50%' }}></div>
-                      <span className="text-sm font-mono text-[var(--color-text-muted)]">23%</span>
-                    </div>
-                  </div>
-                  <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
-                    <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Community Growth</p>
-                    <p className="text-2xl font-bold text-[var(--color-primary)]">+127% <span className="text-sm font-normal text-[var(--color-success)]">YoY</span></p>
-                  </div>
-                </div>
+              <div className="aspect-square rounded-3xl overflow-hidden shadow-xl border border-[var(--color-border)] bg-white">
+                <img
+                  src={currentMemberPhoto}
+                  alt="DAW Sydney members at an event"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
@@ -306,10 +350,12 @@ export function Home() {
         </div>
       </section>
 
+      <NewsletterSignup />
+
       {/* Sponsors Section */}
-      <section className="py-16 bg-white border-y border-[var(--color-border)]">
+      <section className="pt-12 pb-20 bg-white  border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-center text-sm text-[var(--color-text-muted)] uppercase tracking-wider mb-8">
+          <p className="text-center text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-8">
             Proudly supported by
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
@@ -331,7 +377,3 @@ export function Home() {
     </div>
   );
 }
-
-
-
-

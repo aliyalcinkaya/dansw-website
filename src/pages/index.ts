@@ -1,12 +1,16 @@
 export { Home } from './Home';
+export { Events } from './Events';
+export { Jobs } from './Jobs';
+export { JobPostPlans } from './JobPostPlans';
+export { JobDetail } from './JobDetail';
+export { JobSubmit } from './JobSubmit';
+export { AdminPanel } from './AdminPanel';
+export { AdminJobs } from './AdminJobs';
 export { PreviousTalks } from './PreviousTalks';
 export { BecomeMember } from './BecomeMember';
 export { BecomeSpeaker } from './BecomeSpeaker';
 export { BecomeSponsor } from './BecomeSponsor';
 export { About } from './About';
 export { CodeOfConduct } from './CodeOfConduct';
+export { PrivacyPolicy } from './PrivacyPolicy';
 export { NotFound } from './NotFound';
-
-
-
-
