@@ -83,7 +83,7 @@ export function UpcomingEventsSection({
                 </div>
               </div>
             </div>
-          )}py-20 
+          )} 
 
           {!loading && !error && upcomingEvents.length === 0 && (
             <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8">

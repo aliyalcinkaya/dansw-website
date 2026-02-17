@@ -32,7 +32,7 @@ as $$
   select exists (
     select 1
     from public.job_board_admins admins
-    where lower(admins.email) = lower(trim(coalesce(candidate_email, '')))
+    where lower(trim(admins.email)) = lower(trim(coalesce(candidate_email, '')))
   );
 $$;
 

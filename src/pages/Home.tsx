@@ -39,7 +39,7 @@ function pickRandomAvatars(images: string[], count: number) {
 
 export function Home() {
   const { events, loading, error } = useEventbriteEvents();
-  const slackInviteUrl = 'https://join.measure.chat';
+  const slackInviteUrl = 'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
   const linkedinCompanyUrl = 'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all';
   const heroAvatars = useMemo(() => pickRandomAvatars(avatarImagePaths, 8), []);
   const heroCollagePhotos = useMemo(
