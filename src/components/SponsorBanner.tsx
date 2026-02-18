@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 import canvaLogo from '../assets/sponsor_logos/canva.png';
 import funnelLogo from '../assets/sponsor_logos/funnel.png';
 import imwtLogo from '../assets/sponsor_logos/imwt.webp';
