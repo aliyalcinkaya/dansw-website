@@ -22,12 +22,49 @@ export function JobPostPlans() {
             Posting Jobs at DAW Sydney
           </span>
           <h1 className="text-4xl md:text-5xl text-[var(--color-primary)] mt-2 mb-5">
-            Reach the Data & Analytics Community
+            Reach Sydney’s Most Engaged Data & Analytics Talent
           </h1>
-          <p className="text-lg text-[var(--color-text-muted)] leading-relaxed max-w-3xl">
-            Choose a plan first, then continue to your job listing form. Every submitted listing is reviewed and
-            approved within 48 hours.
+          <p className="text-lg text-[var(--color-text-muted)] leading-relaxed max-w-5xl">
+          Connect with a high-intent community of experienced professionals, career switchers, and emerging graduates actively looking for their next opportunity.
+          Choose a plan and publish your role. 
           </p>
+          <h2 className="text-2xl md:text-3xl text-[var(--color-primary)] mt-10 mb-6">
+            Why post with DAWS
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-6 max-w-5xl">
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-1">Targeted, high-quality audience</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Your role is seen by people who are already part of the data &amp; analytics ecosystem — not a generic job board.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-1">Active job seekers</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Our members attend events, subscribe to the newsletter, and regularly engage with the community to find their next role.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-1">All experience levels</h3>
+              <ul className="text-[var(--color-text-muted)] text-sm leading-relaxed space-y-1 mt-1">
+                <li className="flex items-start gap-2"><span className="text-[var(--color-accent)] mt-0.5">•</span>Senior practitioners and hiring-ready specialists</li>
+                <li className="flex items-start gap-2"><span className="text-[var(--color-accent)] mt-0.5">•</span>Mid-career professionals growing into leadership roles</li>
+                <li className="flex items-start gap-2"><span className="text-[var(--color-accent)] mt-0.5">•</span>New graduates and structured career switchers into data</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-1">Local and relevant</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Reach Sydney-based candidates who can attend meetups, start quickly, and become long-term contributors to your team.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-1">Trusted community signal</h3>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
+                Roles shared through DAWS carry credibility because they are curated and reviewed.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -62,24 +99,31 @@ export function JobPostPlans() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 space-y-4">
+          <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 space-y-6">
             <h2 className="text-2xl text-[var(--color-primary)]">How it works</h2>
-            <ol className="grid md:grid-cols-4 gap-4 text-sm text-[var(--color-text-muted)]">
-              <li className="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
-                1. Choose a plan.
-              </li>
-              <li className="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
-                2. Payment step {paymentsDisabled ? 'is currently skipped.' : 'is completed securely via Stripe.'}
-              </li>
-              <li className="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
-                3. Add your role details and submit.
-              </li>
-              <li className="rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
-                4. Admin review and approval within 48 hours.
-              </li>
+            <ol className="grid md:grid-cols-4 gap-0 md:gap-0">
+              {[
+                { step: '1', title: 'Choose a plan', desc: 'Pick the package that suits your hiring needs.' },
+                { step: '2', title: 'Complete payment', desc: paymentsDisabled ? 'Payment step is currently skipped.' : 'Quick, secure checkout via Stripe.' },
+                { step: '3', title: 'Submit your role', desc: 'Add the job details — title, description, and how to apply.' },
+                { step: '4', title: 'Go live', desc: 'Admin review and approval within 48 hours.' },
+              ].map((item, i) => (
+                <li key={item.step} className="relative flex md:flex-col items-start gap-4 md:gap-0 md:items-center md:text-center p-4 md:px-5 md:py-6">
+                  {i < 3 && (
+                    <div className="hidden md:block absolute top-10 left-[calc(50%+24px)] right-[calc(-50%+24px)] h-px border-t-2 border-dashed border-[var(--color-border)]" />
+                  )}
+                  <span className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold text-sm">
+                    {item.step}
+                  </span>
+                  <div className="md:mt-3">
+                    <p className="text-sm font-semibold text-[var(--color-primary)]">{item.title}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
             </ol>
             {paymentsDisabled && (
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface)] rounded-lg px-4 py-2 border border-[var(--color-border)]">
                 Test mode is active. Stripe checkout is skipped and your listing can be submitted directly for review.
               </p>
             )}

@@ -12,6 +12,14 @@ export interface EventbriteVenue {
   };
 }
 
+export interface EventbriteTicketClass {
+  name: string;
+  quantity_total: number | null;
+  quantity_sold: number | null;
+  hidden: boolean;
+  donation: boolean;
+}
+
 export interface EventbriteEvent {
   id: string;
   name: {
@@ -34,8 +42,11 @@ export interface EventbriteEvent {
     utc: string;
   };
   status: 'draft' | 'live' | 'started' | 'ended' | 'completed' | 'canceled';
+  capacity?: number | null;
+  capacity_is_custom?: boolean;
   venue_id: string | null;
   venue?: EventbriteVenue;
+  ticket_classes?: EventbriteTicketClass[];
   logo?: {
     url: string;
     original: {
@@ -72,4 +83,8 @@ export interface DisplayEvent {
   dayOfMonth: string;
   month: string;
   year: string;
+  registrationCount: number | null;
+  seatCapacity: number | null;
+  seatsRemaining: number | null;
+  isLimitedSeats: boolean;
 }

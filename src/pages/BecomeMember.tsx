@@ -32,7 +32,7 @@ const volunteerOpportunities = [
       </svg>
     ),
     gradient: 'from-[var(--color-chart-2)] to-[var(--color-chart-3)]',
-    checkColor: 'text-[var(--color-chart-2)]',
+    checkColor: 'text-[var(--color-accent)]',
     title: 'Find Speakers',
     description: 'Help us discover and recruit talented speakers from across the industry to share their knowledge.',
     tasks: ['Network outreach', 'Topic curation', 'Speaker support'],

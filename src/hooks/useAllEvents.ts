@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { DisplayEvent } from '../types/eventbrite';
 import { fetchAllEvents } from '../services/eventbrite';
+import { shouldForceEventbriteRefreshOnInitialLoad } from './useEventbriteRefreshMode';
 
 interface UseAllEventsResult {
   events: DisplayEvent[];
@@ -30,7 +31,7 @@ export function useAllEvents(): UseAllEventsResult {
   };
 
   useEffect(() => {
-    void fetchEvents();
+    void fetchEvents(shouldForceEventbriteRefreshOnInitialLoad());
   }, []);
 
   return {

@@ -57,6 +57,76 @@ function formatEventTime(startDate: string, endDate: string): string {
   return `${startTime} - ${endTime}`;
 }
 
+function toNumberOrNull(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function isVisibleTicketClass(ticketClass: {
+  hidden?: boolean;
+  donation?: boolean;
+  quantity_total?: number | null;
+}) {
+  return !ticketClass.hidden && !ticketClass.donation && toNumberOrNull(ticketClass.quantity_total) !== null;
+}
+
+function calculateRegistrationStats(event: EventbriteEvent): {
+  registrationCount: number | null;
+  seatCapacity: number | null;
+  seatsRemaining: number | null;
+} {
+  const seatCapacityFromEvent = toNumberOrNull(event.capacity);
+  const ticketClasses = Array.isArray(event.ticket_classes) ? event.ticket_classes : [];
+  const visibleTicketClasses = ticketClasses.filter(isVisibleTicketClass);
+
+  const soldFromTicketClasses = visibleTicketClasses.reduce((sum, ticketClass) => {
+    return sum + (toNumberOrNull(ticketClass.quantity_sold) ?? 0);
+  }, 0);
+
+  const totalFromTicketClasses = visibleTicketClasses.reduce((sum, ticketClass) => {
+    return sum + (toNumberOrNull(ticketClass.quantity_total) ?? 0);
+  }, 0);
+
+  const registrationCount = visibleTicketClasses.length > 0 ? soldFromTicketClasses : null;
+  const seatCapacity =
+    (seatCapacityFromEvent && seatCapacityFromEvent > 0 ? seatCapacityFromEvent : null) ??
+    (totalFromTicketClasses > 0 ? totalFromTicketClasses : null);
+
+  if (seatCapacity === null || registrationCount === null) {
+    return {
+      registrationCount,
+      seatCapacity,
+      seatsRemaining: null,
+    };
+  }
+
+  return {
+    registrationCount,
+    seatCapacity,
+    seatsRemaining: Math.max(0, seatCapacity - registrationCount),
+  };
+}
+
+function isLimitedSeatsStatus(input: {
+  isUpcoming: boolean;
+  seatCapacity: number | null;
+  seatsRemaining: number | null;
+}) {
+  if (!input.isUpcoming || input.seatCapacity === null || input.seatCapacity <= 0 || input.seatsRemaining === null) {
+    return false;
+  }
+
+  return input.seatsRemaining / input.seatCapacity < 0.2;
+}
+
 /**
  * Transforms an Eventbrite event to our display format
  */
@@ -64,6 +134,9 @@ function transformEvent(event: EventbriteEvent): DisplayEvent {
   const { formatted, dayOfMonth, month, year } = formatEventDate(event.start.local);
   const now = new Date();
   const eventDate = new Date(event.start.local);
+  const isUpcoming = eventDate > now;
+  const { registrationCount, seatCapacity, seatsRemaining } = calculateRegistrationStats(event);
+  const description = event.description.text?.trim() || '';
   
   return {
     id: event.id,
@@ -72,12 +145,16 @@ function transformEvent(event: EventbriteEvent): DisplayEvent {
     startLocal: event.start.local,
     time: formatEventTime(event.start.local, event.end.local),
     location: event.venue?.address?.localized_address_display || 'Sydney CBD',
-    description: event.description.text?.substring(0, 200) + (event.description.text?.length > 200 ? '...' : '') || '',
+    description,
     url: event.url,
-    isUpcoming: eventDate > now,
+    isUpcoming,
     dayOfMonth,
     month,
     year,
+    registrationCount,
+    seatCapacity,
+    seatsRemaining,
+    isLimitedSeats: isLimitedSeatsStatus({ isUpcoming, seatCapacity, seatsRemaining }),
   };
 }
 
@@ -110,10 +187,25 @@ function sortByStartAsc(events: DisplayEvent[]): DisplayEvent[] {
  */
 function withCurrentUpcomingStatus(events: DisplayEvent[]): DisplayEvent[] {
   const now = Date.now();
-  return events.map((event) => ({
-    ...event,
-    isUpcoming: new Date(event.startLocal).getTime() > now,
-  }));
+  return events.map((event) => {
+    const isUpcoming = new Date(event.startLocal).getTime() > now;
+    const seatsRemaining =
+      event.seatsRemaining ??
+      (event.seatCapacity !== null && event.registrationCount !== null
+        ? Math.max(0, event.seatCapacity - event.registrationCount)
+        : null);
+
+    return {
+      ...event,
+      isUpcoming,
+      seatsRemaining,
+      isLimitedSeats: isLimitedSeatsStatus({
+        isUpcoming,
+        seatCapacity: event.seatCapacity,
+        seatsRemaining,
+      }),
+    };
+  });
 }
 
 function readAllEventsFromStorage(): CachedEventsPayload | null {
@@ -164,7 +256,7 @@ function writeAllEventsToStorage(payload: CachedEventsPayload): void {
 async function fetchAllEventsFromApi(): Promise<DisplayEvent[]> {
   const params = new URLSearchParams({
     order_by: 'start_desc',
-    expand: 'venue',
+    expand: 'venue,ticket_classes',
   });
 
   const response = await fetch(

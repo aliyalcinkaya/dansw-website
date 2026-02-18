@@ -277,7 +277,7 @@ export function JobDetail() {
                         href={job.externalApplyUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full sm:w-auto sm:max-w-xs flex-1 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
+                        className="w-full sm:w-auto sm:max-w-xs flex-1 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white text-black font-semibold hover:bg-slate-100 transition-all"
                       >
                         Apply on Company Website
                         <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

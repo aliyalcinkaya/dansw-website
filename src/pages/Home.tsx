@@ -8,6 +8,7 @@ import { NewsletterSignup } from '../components/NewsletterSignup';
 
 // Import sponsor logos
 import canvaLogo from '../assets/sponsor_logos/canva.png';
+import funnelLogo from '../assets/sponsor_logos/funnel.png';
 import imwtLogo from '../assets/sponsor_logos/imwt.webp';
 import metriclabsLogo from '../assets/sponsor_logos/metriclabs.png';
 import snowplowLogo from '../assets/sponsor_logos/snowplow.png';
@@ -38,7 +39,7 @@ function pickRandomAvatars(images: string[], count: number) {
 }
 
 export function Home() {
-  const { events, loading, error } = useEventbriteEvents();
+  const { events, loading, error, refetch } = useEventbriteEvents();
   const slackInviteUrl = 'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
   const linkedinCompanyUrl = 'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all';
   const heroAvatars = useMemo(() => pickRandomAvatars(avatarImagePaths, 8), []);
@@ -92,7 +93,7 @@ export function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[var(--color-surface)] via-white to-blue-50">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[var(--color-surface)] via-white to-[var(--color-brand-mint-soft)]">
         {/* Background decoration */}
         <div className="absolute inset-0 data-dots"></div>
 
@@ -120,7 +121,7 @@ export function Home() {
               <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-300">
                 <Link
                   to="/events"
-                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all hover:scale-105 shadow-lg shadow-[var(--color-accent)]/25"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all shadow-lg shadow-[var(--color-accent)]/25"
                 >
                   Join our Next Event
                   <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +184,7 @@ export function Home() {
         </div>
       </section>
 
-      <UpcomingEventsSection events={events} loading={loading} error={error} />
+      <UpcomingEventsSection events={events} loading={loading} error={error} onRetry={refetch} />
 
       {/* LinkedIn News Section */}
       <section className="py-20 bg-gradient-to-b from-white to-[var(--color-surface)] border-y border-[var(--color-border)]">
@@ -340,7 +341,7 @@ export function Home() {
           </p>
           <Link
             to="/become-a-speaker"
-            className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-primary)] font-semibold hover:bg-[var(--color-accent)] hover:text-white transition-all hover:scale-105"
+            className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-primary)] font-semibold hover:bg-[var(--color-accent)] hover:text-white transition-all"
           >
             Become a Speaker
             <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,6 +362,9 @@ export function Home() {
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
               <img src={canvaLogo} alt="Canva" className="h-10 w-auto" />
+            </a>
+            <a href="https://funnel.io" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
+              <img src={funnelLogo} alt="Funnel" className="h-10 w-auto" />
             </a>
             <a href="https://inmarketingwetrust.com.au/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
               <img src={imwtLogo} alt="In Marketing We Trust" className="h-10 w-auto" />

@@ -161,236 +161,266 @@ export function BecomeSponsor() {
         </div>
       </section>
 
-      {/* Why Sponsor */}
-      <section className="py-12 md:py-16 bg-white border-b border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl md:text-3xl text-[var(--color-primary)] text-center mb-10">
-            Why Partner With Us?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {whySponsor.map((item, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-[var(--color-accent)] mb-2">
-                  {item.stat}
-                </div>
-                <div className="text-lg font-semibold text-[var(--color-primary)] mb-2">
-                  {item.label}
-                </div>
-                <p className="text-[var(--color-text-muted)] text-sm">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Sponsorship Tiers */}
+      {/* Content */}
       <section className="py-12 md:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl text-[var(--color-primary)] mb-4">
-              Sponsorship Opportunities
-            </h2>
-            <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto">
-              Choose a sponsorship package that aligns with your goals, or contact us to create a custom partnership.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {sponsorshipTiers.map((tier, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl border border-[var(--color-border)] p-6 hover:shadow-lg transition-shadow flex flex-col"
-              >
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${tier.gradient} flex items-center justify-center text-white mb-4`}>
-                  {tier.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-[var(--color-primary)] mb-2">
-                  {tier.name}
-                </h3>
-                <p className="text-[var(--color-text-muted)] mb-4">
-                  {tier.description}
+          <div className="grid lg:grid-cols-3 gap-12">
+            {/* Main content */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8">
+                <h2 className="text-2xl text-[var(--color-primary)] mb-3">Why Partner With Us?</h2>
+                <p className="text-[var(--color-text-muted)] leading-relaxed">
+                  Sponsor Data & Analytics Wednesday Sydney to connect directly with a highly engaged local
+                  audience of analysts, engineers, marketers, and data leaders.
                 </p>
-                <ul className="space-y-2 flex-grow">
-                  {tier.benefits.map((benefit, benefitIndex) => (
-                    <li key={benefitIndex} className="flex items-start gap-2 text-sm text-[var(--color-text-muted)]">
-                      <svg className="w-4 h-4 text-[var(--color-accent)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {benefit}
-                    </li>
+                <div className="grid sm:grid-cols-3 gap-6 mt-6">
+                  {whySponsor.map((item, index) => (
+                    <div key={index} className="rounded-xl bg-[var(--color-surface-alt)] p-4">
+                      <div className="text-3xl font-bold text-[var(--color-accent)] mb-1">{item.stat}</div>
+                      <div className="text-sm font-semibold text-[var(--color-primary)] mb-1">{item.label}</div>
+                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{item.description}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
-            ))}
-          </div>
 
-          {/* Contact Form */}
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-6 md:p-8">
-              <h2 className="text-2xl text-[var(--color-primary)] mb-2 text-center">
-                Get in Touch
-              </h2>
-              <p className="text-[var(--color-text-muted)] text-center mb-8">
-                Interested in sponsoring? Fill out the form below and we'll get back to you.
-              </p>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <input
-                  type="text"
-                  name="website"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  tabIndex={-1}
-                  autoComplete="off"
-                  className="hidden"
-                  aria-hidden="true"
-                />
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8">
+                <h2 className="text-2xl text-[var(--color-primary)] mb-3">Sponsorship Opportunities</h2>
+                <p className="text-[var(--color-text-muted)] mb-6">
+                  Choose a package that aligns with your goals, or contact us to create a custom partnership.
+                </p>
 
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {/* Name */}
+                <div className="divide-y divide-[var(--color-border)]">
+                  {sponsorshipTiers.map((tier, index) => (
+                    <div key={index} className="py-6 first:pt-0 last:pb-0">
+                      <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
+                        <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${tier.gradient} flex items-center justify-center text-white flex-shrink-0`}>
+                          {tier.icon}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold text-[var(--color-primary)] mb-2">
+                            {tier.name}
+                          </h3>
+                          <p className="text-[var(--color-text-muted)] mb-4">
+                            {tier.description}
+                          </p>
+                          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+                            {tier.benefits.map((benefit, benefitIndex) => (
+                              <li key={benefitIndex} className="flex items-start gap-2 text-sm text-[var(--color-text-muted)]">
+                                <svg className="w-4 h-4 text-[var(--color-accent)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                {benefit}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] shadow-sm p-6 md:p-8">
+                <h2 className="text-2xl text-[var(--color-primary)] mb-2">
+                  Get in Touch
+                </h2>
+                <p className="text-[var(--color-text-muted)] mb-8">
+                  Interested in sponsoring? Fill out the form below and we'll get back to you.
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <input
+                    type="text"
+                    name="website"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                        Your Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                        placeholder="John Smith"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                        placeholder="john@company.com"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      Your Name *
+                    <label htmlFor="company" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                      Company *
                     </label>
                     <input
                       type="text"
-                      id="name"
+                      id="company"
                       required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                      placeholder="John Smith"
+                      placeholder="Acme Corporation"
                     />
                   </div>
 
-                  {/* Email */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                      Email Address *
+                    <label htmlFor="sponsorshipType" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                      Interested In *
                     </label>
-                    <input
-                      type="email"
-                      id="email"
+                    <select
+                      id="sponsorshipType"
                       required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      value={formData.sponsorshipType}
+                      onChange={(e) => setFormData({ ...formData, sponsorshipType: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                      placeholder="john@company.com"
+                    >
+                      <option value="">Select an option</option>
+                      <option value="venue">Venue Hosting</option>
+                      <option value="event">Event Sponsorship</option>
+                      <option value="measurecamp">MeasureCamp Partnership</option>
+                      <option value="custom">Custom Partnership</option>
+                      <option value="other">Other / Not Sure</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                      Tell us more about your goals
+                    </label>
+                    <textarea
+                      id="message"
+                      rows={4}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all resize-none"
+                      placeholder="What are you hoping to achieve through sponsorship? Any specific events or timing in mind?"
                     />
                   </div>
-                </div>
 
-                {/* Company */}
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Company *
-                  </label>
-                  <input
-                    type="text"
-                    id="company"
-                    required
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
-                    placeholder="Acme Corporation"
-                  />
-                </div>
-
-                {/* Sponsorship Type */}
-                <div>
-                  <label htmlFor="sponsorshipType" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Interested In *
-                  </label>
-                  <select
-                    id="sponsorshipType"
-                    required
-                    value={formData.sponsorshipType}
-                    onChange={(e) => setFormData({ ...formData, sponsorshipType: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all"
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <option value="">Select an option</option>
-                    <option value="venue">Venue Hosting</option>
-                    <option value="event">Event Sponsorship</option>
-                    <option value="measurecamp">MeasureCamp Partnership</option>
-                    <option value="custom">Custom Partnership</option>
-                    <option value="other">Other / Not Sure</option>
-                  </select>
-                </div>
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        Submit Inquiry
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
 
-                {/* Message */}
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                    Tell us more about your goals
-                  </label>
-                  <textarea
-                    id="message"
-                    rows={4}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent transition-all resize-none"
-                    placeholder="What are you hoping to achieve through sponsorship? Any specific events or timing in mind?"
-                  />
-                </div>
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      Submit Inquiry
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </>
+                  {submitError && (
+                    <p className="text-sm text-red-600 text-center" role="status">
+                      {submitError}
+                    </p>
                   )}
-                </button>
+                </form>
+              </div>
+            </div>
 
-                {submitError && (
-                  <p className="text-sm text-red-600 text-center" role="status">
-                    {submitError}
-                  </p>
-                )}
-              </form>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)] rounded-2xl p-6 text-white">
+                <h3 className="text-xl font-semibold mb-3">Sponsor Pack</h3>
+                <p className="text-white text-sm mb-4">
+                  Download our sponsorship pack for package options, benefits, and pricing details.
+                </p>
+                <a
+                  href="/pdfs/2025_daw_sponsor_pack.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-[var(--color-accent)] font-semibold text-sm hover:bg-white/90 transition-colors"
+                >
+                  Download PDF
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </a>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6">
+                <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-3">Need Help Choosing?</h3>
+                <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                  Tell us your goals and budget, and we can recommend the best sponsorship option.
+                </p>
+                <a
+                  href="mailto:commitee@wawsydney.com"
+                  className="inline-flex items-center gap-2 text-[var(--color-accent)] text-sm font-medium hover:gap-3 transition-all"
+                >
+                  Contact the team
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
+
+              <div className="bg-[var(--color-surface-alt)] rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-4">Community Snapshot</h3>
+                <div className="space-y-4">
+                  {whySponsor.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--color-text-muted)]">{item.label}</span>
+                      <span className="font-semibold text-[var(--color-primary)]">{item.stat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6">
+                <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-3">Join Our Sponsors</h3>
+                <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                  These amazing companies help make our community events possible.
+                </p>
+                <a
+                  href="/"
+                  className="inline-flex items-center gap-2 text-[var(--color-accent)] text-sm font-medium hover:gap-3 transition-all"
+                >
+                  View current sponsors
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Current Sponsors */}
-      <section className="py-12 md:py-16 bg-white border-t border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl text-[var(--color-primary)] mb-4">
-            Join Our Sponsors
-          </h2>
-          <p className="text-[var(--color-text-muted)] mb-8">
-            These amazing companies help make our community events possible.
-          </p>
-          <a
-            href="/"
-            className="inline-flex items-center text-[var(--color-accent)] font-semibold hover:gap-3 transition-all gap-2"
-          >
-            View our current sponsors
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
         </div>
       </section>
     </div>
   );
 }
-
-

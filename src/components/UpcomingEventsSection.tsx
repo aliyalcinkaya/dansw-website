@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { DisplayEvent } from '../types/eventbrite';
+import { getGoogleMapsSearchUrl } from '../utils/maps';
 
 const eventbriteOrgUrl = 'https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448';
 
@@ -27,15 +28,72 @@ export function UpcomingEventsSection({
     [events]
   );
 
+  const getTicketStatus = (event: DisplayEvent) => {
+    if (event.seatCapacity !== null && event.seatsRemaining !== null) {
+      if (event.seatsRemaining <= 0) {
+        return {
+          label: 'Booked Out',
+          className: 'text-red-600',
+        };
+      }
+
+      if (event.seatCapacity > 0 && event.seatsRemaining / event.seatCapacity < 0.2) {
+        return {
+          label: 'Limited Spots',
+          className: 'text-amber-600',
+        };
+      }
+    }
+
+    return {
+      label: 'Tickets Available',
+      className: 'text-emerald-600',
+    };
+  };
+
   return (
     <section className="py-20 bg-[var(--color-surface)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl text-[var(--color-primary)] mb-4">
-            Upcoming Events
-          </h2>
+          <div className="mb-4 inline-flex items-center justify-center gap-2">
+            <h2 className="text-3xl md:text-4xl text-[var(--color-primary)]">
+              Upcoming Events
+            </h2>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                disabled={loading}
+                aria-label="Refresh events"
+                title="Refresh events"
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-all ${
+                  loading
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]'
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={loading ? 'animate-spin' : ''}
+                >
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 16h5v5" />
+                </svg>
+              </button>
+            )}
+          </div>
           <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto">
-            Don't miss our next meetup! We host events on the last Wednesday of every month.
+          Attendance is free, but registration is required as spaces are limited. Secure your ticket for the next meetup. 
           </p>
         </div>
 
@@ -111,7 +169,7 @@ export function UpcomingEventsSection({
               className="relative bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm hover:shadow-md transition-all group"
             >
               <div className="flex flex-col md:flex-row md:items-center gap-6">
-                <div className="flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)]">
+                <div className="flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white event-gradient">
                   <span className="text-2xl font-bold">{event.dayOfMonth}</span>
                   <span className="text-xs uppercase tracking-wider opacity-80">{event.month}</span>
                 </div>
@@ -127,31 +185,45 @@ export function UpcomingEventsSection({
                       </svg>
                       {event.time}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <a
+                      href={getGoogleMapsSearchUrl(event.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:text-[var(--color-accent)] hover:underline transition-colors"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       {event.location}
-                    </span>
+                    </a>
                   </div>
                   {event.description && (
-                    <p className="mt-3 text-[var(--color-text-muted)]">{event.description}</p>
+                    <p className="mt-3 text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
                   )}
                 </div>
 
                 <div className="flex-shrink-0">
-                  <a
-                    href={event.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]"
-                  >
-                    🎫 Get Tickets
-                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
+                  <div className="flex flex-col items-center gap-2">
+                    <a
+                      href={event.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]"
+                    >
+                      <svg className="w-[1.3rem] h-[1.3rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                        <path d="m9 12 2 2 4-4" />
+                      </svg>
+                      Get Tickets
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                    <p className={`text-xs font-semibold text-center ${getTicketStatus(event).className}`}>
+                      {getTicketStatus(event).label}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -172,4 +244,3 @@ export function UpcomingEventsSection({
     </section>
   );
 }
-

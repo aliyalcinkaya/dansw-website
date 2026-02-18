@@ -4,7 +4,7 @@ export function Logo({ className = '' }: { className?: string }) {
   return (
     <Link to="/" className={`flex items-center gap-3 group ${className}`}>
       <img
-        src="/Data-and-analytics-notext-whitebg.png"
+        src="/Data-and-analytics-transparent.png"
         alt="Data & Analytics Wednesday Sydney logo"
         className="h-12 robject-contain"
       />
@@ -21,6 +21,5 @@ export function Logo({ className = '' }: { className?: string }) {
     </Link>
   );
 }
-
 
 

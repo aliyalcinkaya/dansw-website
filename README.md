@@ -46,6 +46,7 @@ VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 VITE_SUPABASE_FORMS_TABLE=form_submissions
 VITE_SUPABASE_NEWSLETTER_TABLE=newsletter_subscriptions
+VITE_SUPABASE_NEWSLETTER_MAILCHIMP_FUNCTION=newsletter-mailchimp-sync           # optional
 VITE_SUPABASE_JOBS_TABLE=job_posts
 VITE_SUPABASE_JOB_APPLICATIONS_TABLE=job_applications
 VITE_SUPABASE_JOB_ADMIN_NOTIFICATIONS_TABLE=job_admin_notifications
@@ -133,6 +134,42 @@ Optional (for form submit analytics to Mixpanel):
 ```bash
 VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here
 ```
+
+Optional (mirror newsletter subscribers to Mailchimp via Supabase Edge Functions):
+
+```bash
+# Frontend env (calls the function after successful newsletter insert)
+VITE_SUPABASE_NEWSLETTER_MAILCHIMP_FUNCTION=newsletter-mailchimp-sync
+
+# Supabase Edge Function secrets (set in Supabase, not in Vite env)
+MAILCHIMP_API_KEY=your_mailchimp_api_key
+MAILCHIMP_AUDIENCE_ID=your_mailchimp_audience_id
+# Optional if your API key includes suffix like -us21
+MAILCHIMP_SERVER_PREFIX=us21
+# Optional
+MAILCHIMP_DOUBLE_OPT_IN=false
+MAILCHIMP_DEFAULT_TAGS=DAWS Website
+MAILCHIMP_ALLOWED_ORIGIN=https://your-site-domain.com
+```
+
+Example secret setup command:
+
+```bash
+supabase secrets set \
+  MAILCHIMP_API_KEY=your_mailchimp_api_key \
+  MAILCHIMP_AUDIENCE_ID=your_mailchimp_audience_id \
+  MAILCHIMP_SERVER_PREFIX=us21
+```
+
+Deploy function:
+
+```bash
+supabase functions deploy newsletter-mailchimp-sync
+```
+
+The function code lives at:
+
+`supabase/functions/newsletter-mailchimp-sync/index.ts`
 
 ### Job Board Backend
 

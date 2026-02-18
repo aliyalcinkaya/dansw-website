@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePastEvents } from '../hooks/usePastEvents';
+import { getGoogleMapsSearchUrl } from '../utils/maps';
 
 export function PreviousTalks() {
   const { events, loading, error } = usePastEvents();
@@ -130,12 +131,12 @@ export function PreviousTalks() {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   {/* Colored header */}
-                  <div className="h-2 bg-gradient-to-r from-[var(--color-accent)] via-[var(--color-chart-2)] to-[var(--color-chart-3)]"></div>
+                  <div className="h-2 event-gradient"></div>
                   
                   <div className="p-6">
                     {/* Date badge */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 flex flex-col items-center justify-center text-white">
+                      <div className="w-14 h-14 rounded-xl event-gradient flex flex-col items-center justify-center text-white">
                         <span className="text-lg font-bold leading-none">{event.dayOfMonth}</span>
                         <span className="text-[10px] uppercase tracking-wider opacity-80">{event.month}</span>
                       </div>
@@ -153,13 +154,18 @@ export function PreviousTalks() {
                     </h3>
                     
                     {/* Location */}
-                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] mb-3">
+                    <a
+                      href={getGoogleMapsSearchUrl(event.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] mb-3 hover:text-[var(--color-accent)] hover:underline transition-colors"
+                    >
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <span className="truncate">{event.location}</span>
-                    </div>
+                    </a>
                     
                     {/* Description */}
                     {event.description && (

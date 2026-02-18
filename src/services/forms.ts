@@ -64,6 +64,13 @@ interface NormalizedRecord {
 }
 
 type SubmissionTarget = 'forms' | 'newsletter';
+type MailchimpSyncStatus = 'synced' | 'already_subscribed' | 'failed';
+
+interface MailchimpSyncResponse {
+  ok: boolean;
+  status?: MailchimpSyncStatus;
+  message?: string;
+}
 
 function getSupabaseConfig() {
   const url = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
@@ -273,6 +280,81 @@ async function postSubmission(
   }
 }
 
+async function syncNewsletterToMailchimp(record: NormalizedRecord): Promise<void> {
+  const config = getSupabaseConfig();
+  const functionName = import.meta.env.VITE_SUPABASE_NEWSLETTER_MAILCHIMP_FUNCTION?.trim();
+
+  if (!config || !functionName) {
+    return;
+  }
+
+  const endpoint = new URL(`${config.url}/functions/v1/${encodeURIComponent(functionName)}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(endpoint.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: config.anonKey,
+        Authorization: `Bearer ${config.anonKey}`,
+      },
+      body: JSON.stringify({
+        email: record.email,
+        source: record.source,
+        page_path: record.page_path,
+        received_at: record.received_at,
+      }),
+      signal: controller.signal,
+    });
+
+    const responseText = await response.text();
+    let payload: MailchimpSyncResponse | null = null;
+
+    if (responseText) {
+      try {
+        payload = JSON.parse(responseText) as MailchimpSyncResponse;
+      } catch {
+        payload = null;
+      }
+    }
+
+    if (!response.ok || payload?.ok === false) {
+      if (import.meta.env.DEV) {
+        console.error(`Mailchimp sync failed (${response.status}): ${responseText}`);
+      }
+
+      void trackAnalyticsEvent('Newsletter Mailchimp sync failed', {
+        form_type: record.type,
+        source: record.source,
+        email: record.email,
+        status_code: response.status,
+        failure_reason: 'mailchimp_sync_failed',
+      });
+      return;
+    }
+
+    void trackAnalyticsEvent('Newsletter Mailchimp synced', {
+      form_type: record.type,
+      source: record.source,
+      email: record.email,
+      sync_status: payload?.status ?? 'synced',
+    });
+  } catch (error) {
+    const timeoutError = error instanceof DOMException && error.name === 'AbortError';
+
+    void trackAnalyticsEvent('Newsletter Mailchimp sync failed', {
+      form_type: record.type,
+      source: record.source,
+      email: record.email,
+      failure_reason: timeoutError ? 'timeout' : 'network_error',
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function buildBaseRecord(input: BaseInput & { email: string }, type: FormType) {
   return {
     type,
@@ -418,14 +500,17 @@ export async function submitNewsletterSubscription(
 ): Promise<SubmitResult> {
   const commonValidation = validateCommon('newsletter', input);
   if (!commonValidation.ok) return commonValidation;
-
-  return postSubmission(
-    {
-      ...buildBaseRecord(input, 'newsletter'),
-      payload: {
-        subscription: 'newsletter',
-      },
+  const record: NormalizedRecord = {
+    ...buildBaseRecord(input, 'newsletter'),
+    payload: {
+      subscription: 'newsletter',
     },
-    'newsletter'
-  );
+  };
+
+  const result = await postSubmission(record, 'newsletter');
+  if (result.ok && !toTrimmed(input.website)) {
+    void syncNewsletterToMailchimp(record);
+  }
+
+  return result;
 }

@@ -61,8 +61,8 @@ export function About() {
                   </div>
                   
                   <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--color-chart-2)]/10 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-[var(--color-chart-2)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--color-chart-2)]/20 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
@@ -111,15 +111,15 @@ export function About() {
             <div className="space-y-6">
               {/* Membership CTA */}
               <div className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-chart-2)] rounded-2xl p-6 text-white">
-                <h3 className="text-xl font-semibold mb-3">Become a Member</h3>
-                <p className="text-white/80 text-sm mb-4">
+                <h3 className="text-xl font-semibold mb-3">Want to Contribute?</h3>
+                <p className="text-white text-sm mb-4">
                   Join Digital Analytics NSW Inc. and help shape the future of our community.
                 </p>
                 <Link
                   to="/become-a-member"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-[var(--color-accent)] font-semibold text-sm hover:bg-white/90 transition-colors"
                 >
-                  Join Now
+                  Volunteer
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -133,7 +133,9 @@ export function About() {
                   Our constitution governs how we operate and make decisions.
                 </p>
                 <a
-                  href="#"
+                  href="/pdfs/model_constitution.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-[var(--color-accent)] text-sm font-medium hover:gap-3 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,18 +187,19 @@ export function About() {
               <div className="bg-[var(--color-surface-alt)] rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-4">Community Stats</h3>
                 <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-[var(--color-text-muted)]">Years Running</span>
+                    <span className="font-semibold text-[var(--color-primary)]">10+</span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-[var(--color-text-muted)]">Events Hosted</span>
                     <span className="font-semibold text-[var(--color-primary)]">100+</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-[var(--color-text-muted)]">Community Members</span>
-                    <span className="font-semibold text-[var(--color-primary)]">3000+</span>
+                    <span className="font-semibold text-[var(--color-primary)]">7900+</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-[var(--color-text-muted)]">Years Running</span>
-                    <span className="font-semibold text-[var(--color-primary)]">10+</span>
-                  </div>
+                  
                 </div>
               </div>
             </div>
@@ -206,6 +209,5 @@ export function About() {
     </div>
   );
 }
-
 
 
