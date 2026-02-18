@@ -97,7 +97,7 @@ export function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
                 </span>
-                <a href="/jobs" className="text-[var(--color-accent)] hover:underline">Job Board is Live! See Open Roles</a>
+                <Link to="/jobs" className="text-[var(--color-accent)] hover:underline">Job Board is Live! See Open Roles</Link>
               </div>
 
               <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6 animate-fade-in-up animate-delay-100">
