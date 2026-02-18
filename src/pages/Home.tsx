@@ -4,14 +4,6 @@ import { useEventbriteEvents } from '../hooks/useEventbriteEvents';
 import { getLinkedInEmbedPosts, getLinkedInEmbedPostsFromInputs } from '../services/linkedin';
 import { fetchLinkedInPostUrls } from '../services/siteSettings';
 import { UpcomingEventsSection } from '../components/UpcomingEventsSection';
-import { NewsletterSignup } from '../components/NewsletterSignup';
-
-// Import sponsor logos
-import canvaLogo from '../assets/sponsor_logos/canva.png';
-import funnelLogo from '../assets/sponsor_logos/funnel.png';
-import imwtLogo from '../assets/sponsor_logos/imwt.webp';
-import metriclabsLogo from '../assets/sponsor_logos/metriclabs.png';
-import snowplowLogo from '../assets/sponsor_logos/snowplow.png';
 
 const avatarImagePaths = Object.keys(
   import.meta.glob('/public/avatar/*.{jpg,jpeg,png,webp,avif,gif}'),
@@ -351,33 +343,6 @@ export function Home() {
         </div>
       </section>
 
-      <NewsletterSignup />
-
-      {/* Sponsors Section */}
-      <section className="pt-12 pb-20 bg-white  border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <p className="text-center text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-8">
-            Proudly supported by
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={canvaLogo} alt="Canva" className="h-10 w-auto" />
-            </a>
-            <a href="https://funnel.io" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={funnelLogo} alt="Funnel" className="h-10 w-auto" />
-            </a>
-            <a href="https://inmarketingwetrust.com.au/" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={imwtLogo} alt="In Marketing We Trust" className="h-10 w-auto" />
-            </a>
-            <a href="https://www.metriclabs.com.au" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={metriclabsLogo} alt="Metric Labs" className="h-10 w-auto" />
-            </a>
-            <a href="https://www.snowplow.io" target="_blank" rel="noopener noreferrer" className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all">
-              <img src={snowplowLogo} alt="Snowplow" className="h-10 w-auto" />
-            </a>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

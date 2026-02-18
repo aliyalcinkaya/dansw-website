@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigation } from './Navigation';
+import { NewsletterSignup } from './NewsletterSignup';
+import { SponsorBanner } from './SponsorBanner';
 import { Footer } from './Footer';
 
 interface LayoutProps {
@@ -19,6 +21,8 @@ export function Layout({ children }: LayoutProps) {
       <main id="main-content" className="flex-grow">
         {children}
       </main>
+      <NewsletterSignup />
+      <SponsorBanner />
       <Footer />
     </div>
   );

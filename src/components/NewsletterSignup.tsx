@@ -29,7 +29,7 @@ export function NewsletterSignup() {
       }
 
       setStatus('success');
-      setStatusMessage('Subscribed. You will receive updates on events and community news.');
+      setStatusMessage(result.message ?? 'Subscribed. You will receive updates on events and community news.');
       setNewsletterEmail('');
       setWebsite('');
     } catch {

@@ -60,6 +60,7 @@ create table if not exists public.newsletter_subscriptions (
   mixpanel_anonymous_id text,
   user_agent text,
   page_path text,
+  website text,
   payload jsonb not null default '{}'::jsonb,
   status text not null default 'subscribed',
   received_at timestamptz,
@@ -72,7 +73,9 @@ alter table public.newsletter_subscriptions
   drop column if exists company,
   drop column if exists message,
   drop column if exists newsletter;
-  drop column if exists website;
+
+alter table public.newsletter_subscriptions
+  add column if not exists website text;
 
 create unique index if not exists newsletter_subscriptions_email_key
   on public.newsletter_subscriptions (email);
