@@ -118,12 +118,15 @@ export function Events() {
 
           {!loading && !error && filteredPreviousEvents.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPreviousEvents.map((event, index) => (
-                <article
-                  key={event.id}
-                  className="group bg-white rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
+              {filteredPreviousEvents.map((event, index) => {
+                const eventbriteLink = event.eventbriteUrl || (event.url !== '#' ? event.url : null);
+
+                return (
+                  <article
+                    key={event.id}
+                    className="group bg-white rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                   <div className="h-2 event-gradient"></div>
 
                   <div className="p-6">
@@ -144,6 +147,40 @@ export function Events() {
                       {event.title}
                     </h3>
 
+                    {event.talks.length > 0 && (
+                      <div className="mb-4 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                          Talks
+                        </p>
+                        {event.talks.slice(0, 2).map((talk) => (
+                          <div
+                            key={`${event.id}-${talk.id}`}
+                            className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5"
+                          >
+                            {talk.speaker?.photoUrl ? (
+                              <img
+                                src={talk.speaker.photoUrl}
+                                alt={`${talk.speaker.fullName} profile`}
+                                className="h-10 w-10 rounded-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-xs font-semibold text-[var(--color-accent)]">
+                                {(talk.speaker?.fullName || 'T').slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="line-clamp-1 text-sm font-medium text-[var(--color-primary)]">{talk.title}</p>
+                              <p className="line-clamp-1 text-xs text-[var(--color-text-muted)]">
+                                {talk.speaker?.fullName || 'Speaker TBC'}
+                                {talk.speaker?.headline ? ` - ${talk.speaker.headline}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <a
                       href={getGoogleMapsSearchUrl(event.location)}
                       target="_blank"
@@ -163,20 +200,38 @@ export function Events() {
                       </p>
                     )}
 
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      View on Eventbrite
-                    </a>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        to={`/talks/${event.id}`}
+                        className="w-full py-2 rounded-lg bg-[var(--color-accent)] text-sm font-medium text-white hover:bg-[var(--color-accent-light)] transition-all flex items-center justify-center gap-2"
+                      >
+                        View Talk Details
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                      {eventbriteLink ? (
+                        <a
+                          href={eventbriteLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          Open in Eventbrite
+                        </a>
+                      ) : (
+                        <span className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-slate-500 flex items-center justify-center gap-2 bg-slate-100">
+                          Eventbrite link coming soon
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -11,6 +11,7 @@ language sql
 stable
 security definer
 set search_path = public
+set row_security = off
 as $$
   select exists (
     select 1
@@ -28,6 +29,7 @@ language sql
 stable
 security definer
 set search_path = public
+set row_security = off
 as $$
   select exists (
     select 1
@@ -413,23 +415,19 @@ grant select, update on public.job_applications to authenticated;
 alter table public.job_board_admins enable row level security;
 
 drop policy if exists "job_admins_can_view_admin_directory" on public.job_board_admins;
-create policy "job_admins_can_view_admin_directory"
+drop policy if exists "users_can_view_own_admin_entry" on public.job_board_admins;
+create policy "users_can_view_own_admin_entry"
 on public.job_board_admins
 for select
 to authenticated
-using (public.is_job_admin());
+using (
+  lower(trim(email)) = lower(trim(coalesce(auth.jwt() ->> 'email', '')))
+);
 
 drop policy if exists "job_admins_can_manage_admin_directory" on public.job_board_admins;
-create policy "job_admins_can_manage_admin_directory"
-on public.job_board_admins
-for all
-to authenticated
-using (public.is_job_admin())
-with check (public.is_job_admin());
 
 revoke all on public.job_board_admins from anon, authenticated;
 grant select on public.job_board_admins to authenticated;
-grant insert, update, delete on public.job_board_admins to authenticated;
 
 create table if not exists public.site_settings (
   key text primary key,

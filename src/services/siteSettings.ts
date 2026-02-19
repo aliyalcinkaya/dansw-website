@@ -6,6 +6,7 @@ const LINKEDIN_POSTS_KEY = 'home_linkedin_posts';
 const LOCAL_SETTINGS_STORAGE_KEY = 'daws_site_settings_v1';
 const MAX_LINKEDIN_POST_URLS = 6;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ADMIN_ACCESS_CACHE_TTL_MS = 60_000;
 
 interface ServiceResult<T> {
   ok: boolean;
@@ -27,6 +28,16 @@ export interface SiteAdminAccess {
   email: string | null;
   canManage: boolean;
 }
+
+interface CachedAdminAccessResult {
+  ok: boolean;
+  data: SiteAdminAccess;
+  message?: string;
+  cachedAt: number;
+}
+
+let adminAccessCache: CachedAdminAccessResult | null = null;
+let adminAccessAuthListenerInitialized = false;
 
 function getSiteSettingsTableName() {
   return import.meta.env.VITE_SUPABASE_SITE_SETTINGS_TABLE?.trim() || DEFAULT_SITE_SETTINGS_TABLE;
@@ -153,10 +164,49 @@ function getLinkedInUrlFallback() {
   return readEnvLinkedInUrls();
 }
 
+function isAdminAccessCacheFresh(cachedAt: number) {
+  return Date.now() - cachedAt < ADMIN_ACCESS_CACHE_TTL_MS;
+}
+
+function setAdminAccessCache(result: ServiceResult<SiteAdminAccess>) {
+  adminAccessCache = {
+    ok: result.ok,
+    data: result.data,
+    message: result.message,
+    cachedAt: Date.now(),
+  };
+}
+
+export function clearCachedSiteAdminAccess() {
+  adminAccessCache = null;
+}
+
+export function getCachedSiteAdminAccess() {
+  if (!adminAccessCache) {
+    return null;
+  }
+
+  if (!isAdminAccessCacheFresh(adminAccessCache.cachedAt)) {
+    adminAccessCache = null;
+    return null;
+  }
+
+  return {
+    ok: adminAccessCache.ok,
+    data: adminAccessCache.data,
+    message: adminAccessCache.message,
+  } as ServiceResult<SiteAdminAccess>;
+}
+
 export async function fetchSiteAdminAccess(): Promise<ServiceResult<SiteAdminAccess>> {
+  const cached = getCachedSiteAdminAccess();
+  if (cached) {
+    return cached;
+  }
+
   const client = getSupabaseClient();
   if (!client) {
-    return {
+    const localResult = {
       ok: true,
       data: {
         mode: 'local',
@@ -164,29 +214,42 @@ export async function fetchSiteAdminAccess(): Promise<ServiceResult<SiteAdminAcc
         canManage: true,
       },
       message: 'Supabase is not configured. Admin edits are saved only in this browser.',
-    };
+    } as const;
+    setAdminAccessCache(localResult);
+    return localResult;
+  }
+
+  if (!adminAccessAuthListenerInitialized) {
+    client.auth.onAuthStateChange(() => {
+      clearCachedSiteAdminAccess();
+    });
+    adminAccessAuthListenerInitialized = true;
   }
 
   try {
     const { data: userData, error: userError } = await client.auth.getUser();
     if (userError) {
-      return {
+      const errorResult = {
         ok: false,
         data: { mode: 'supabase', email: null, canManage: false },
         message: formatServiceError(userError, 'Unable to check current admin session.'),
-      };
+      } as const;
+      setAdminAccessCache(errorResult);
+      return errorResult;
     }
 
     const email = userData.user?.email?.toLowerCase() ?? null;
     if (!email) {
-      return {
+      const signedOutResult = {
         ok: true,
         data: {
           mode: 'supabase',
           email: null,
           canManage: false,
         },
-      };
+      } as const;
+      setAdminAccessCache(signedOutResult);
+      return signedOutResult;
     }
 
     const adminEmailCheck = await client.rpc('is_job_admin_email', {
@@ -194,28 +257,32 @@ export async function fetchSiteAdminAccess(): Promise<ServiceResult<SiteAdminAcc
     });
 
     if (!adminEmailCheck.error && typeof adminEmailCheck.data === 'boolean') {
-      return {
+      const adminResult = {
         ok: true,
         data: {
           mode: 'supabase',
           email,
           canManage: adminEmailCheck.data,
         },
-      };
+      } as const;
+      setAdminAccessCache(adminResult);
+      return adminResult;
     }
 
     // Fallback for environments where is_job_admin_email is not deployed yet.
     if ((adminEmailCheck.error?.code ?? '') === 'PGRST202') {
       const adminCheck = await client.rpc('is_job_admin');
       if (!adminCheck.error && typeof adminCheck.data === 'boolean') {
-        return {
+        const adminFallbackResult = {
           ok: true,
           data: {
             mode: 'supabase',
             email,
             canManage: adminCheck.data,
           },
-        };
+        } as const;
+        setAdminAccessCache(adminFallbackResult);
+        return adminFallbackResult;
       }
     }
 
@@ -224,7 +291,7 @@ export async function fetchSiteAdminAccess(): Promise<ServiceResult<SiteAdminAcc
         ? 'Admin email check function is missing. Run the latest Supabase SQL migration.'
         : formatServiceError(adminEmailCheck.error, 'Unable to verify admin access.');
 
-    return {
+    const restrictedResult = {
       ok: true,
       data: {
         mode: 'supabase',
@@ -232,13 +299,17 @@ export async function fetchSiteAdminAccess(): Promise<ServiceResult<SiteAdminAcc
         canManage: false,
       },
       message: reason,
-    };
+    } as const;
+    setAdminAccessCache(restrictedResult);
+    return restrictedResult;
   } catch (error) {
-    return {
+    const exceptionResult = {
       ok: false,
       data: { mode: 'supabase', email: null, canManage: false },
       message: formatServiceError(error, 'Unable to determine admin access.'),
-    };
+    } as const;
+    setAdminAccessCache(exceptionResult);
+    return exceptionResult;
   }
 }
 

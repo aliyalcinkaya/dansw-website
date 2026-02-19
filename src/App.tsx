@@ -6,14 +6,19 @@ import { Home } from './pages';
 
 // Lazy load non-critical routes
 const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
+const PreviousTalks = lazy(() => import('./pages/PreviousTalks').then(m => ({ default: m.PreviousTalks })));
 const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
 const JobPostPlans = lazy(() => import('./pages/JobPostPlans').then(m => ({ default: m.JobPostPlans })));
 const JobDetail = lazy(() => import('./pages/JobDetail').then(m => ({ default: m.JobDetail })));
 const JobSubmit = lazy(() => import('./pages/JobSubmit').then(m => ({ default: m.JobSubmit })));
 const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const AdminJobs = lazy(() => import('./pages/AdminJobs').then(m => ({ default: m.AdminJobs })));
+const AdminEvents = lazy(() => import('./pages/AdminEvents').then(m => ({ default: m.AdminEvents })));
+const AdminSpeakers = lazy(() => import('./pages/AdminSpeakers').then(m => ({ default: m.AdminSpeakers })));
+const AdminSocialPosts = lazy(() => import('./pages/AdminSocialPosts').then(m => ({ default: m.AdminSocialPosts })));
 const BecomeMember = lazy(() => import('./pages/BecomeMember').then(m => ({ default: m.BecomeMember })));
 const BecomeSpeaker = lazy(() => import('./pages/BecomeSpeaker').then(m => ({ default: m.BecomeSpeaker })));
+const TalkDetails = lazy(() => import('./pages/TalkDetails').then(m => ({ default: m.TalkDetails })));
 const BecomeSponsor = lazy(() => import('./pages/BecomeSponsor').then(m => ({ default: m.BecomeSponsor })));
 const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
 const CodeOfConduct = lazy(() => import('./pages/CodeOfConduct').then(m => ({ default: m.CodeOfConduct })));
@@ -46,14 +51,22 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/events" element={<Events />} />
             <Route path="/event" element={<Navigate to="/events" replace />} />
+            <Route path="/talks/:eventId" element={<TalkDetails />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/post" element={<JobPostPlans />} />
             <Route path="/jobs/submit" element={<JobSubmit />} />
             <Route path="/jobs/:slug" element={<JobDetail />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/admin/jobs" element={<AdminJobs />} />
+            <Route path="/admin/events" element={<AdminEvents mode="list" />} />
+            <Route path="/admin/events/new" element={<AdminEvents mode="create" />} />
+            <Route path="/admin/speakers" element={<AdminSpeakers mode="list" />} />
+            <Route path="/admin/speakers/new" element={<AdminSpeakers mode="create" />} />
+            <Route path="/admin/social-posts" element={<AdminSocialPosts mode="list" />} />
+            <Route path="/admin/social-posts/new" element={<AdminSocialPosts mode="create" />} />
+            <Route path="/admin/social-posts/edit/:postIndex" element={<AdminSocialPosts mode="edit" />} />
             <Route path="/job-board" element={<Navigate to="/jobs" replace />} />
-            <Route path="/previous-talks" element={<Navigate to="/events" replace />} />
+            <Route path="/previous-talks" element={<PreviousTalks />} />
             <Route path="/join" element={<BecomeMember />} />
             <Route path="/become-a-member" element={<Navigate to="/join" replace />} />
             <Route path="/get-involved" element={<Navigate to="/join#volunteer" replace />} />

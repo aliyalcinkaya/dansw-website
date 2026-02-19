@@ -6,7 +6,7 @@ export function Logo({ className = '' }: { className?: string }) {
       <img
         src="/Data-and-analytics-transparent.png"
         alt="Data & Analytics Wednesday Sydney logo"
-        className="h-12 robject-contain"
+        className="h-12 object-contain"
       />
       
       {/* Text */}
@@ -21,5 +21,4 @@ export function Logo({ className = '' }: { className?: string }) {
     </Link>
   );
 }
-
 

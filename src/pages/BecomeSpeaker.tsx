@@ -11,23 +11,34 @@ interface FormData {
   bio: string;
 }
 
-const formatNotes = [
-  'DAW is informal, with short talks and plenty of social time.',
-  'Aim for 15-20 minutes of prepared material to leave room for questions.',
-  'Audience interjections and discussion during talks are common.',
-  'Formats can include slides, live demos, fireside chats, panels, or workshops.',
+const timingNotes = [
+  'Events usually begin at 18:00 on the second Wednesday of each month.',
+  'Talk slots are typically 15-20 minutes of content plus Q&A.',
+  'Please arrive early for AV checks and a quick run-through with the host.',
 ];
 
-const audienceNotes = [
-  'Attendees include new graduates, job seekers, managers, analysts, scientists, marketers, and product managers.',
-  'People attend to learn best practices, meet potential employers or hires, and build industry connections.',
+const formatGuidelines = [
+  'DAW is informal and interactive, with questions often asked during the talk.',
+  'Formats can include case studies, demos, walkthroughs, fireside chats, or short panels.',
+  'Prioritize practical takeaways attendees can apply immediately.',
 ];
 
-const setupNotes = [
-  'Event starts at 18:00 on the second Wednesday of each month. Please arrive early.',
-  'Talk slots are typically around 30 minutes including Q&A, with a 20-minute wrap-up cue.',
-  'Available setup includes microphone, projector, and laptop connections (HDMI, VGA, 16:9).',
-  'Bring your own internet if possible, and bring your laptop or send slides in PDF ahead of time.',
+const technicalRequirements = [
+  'Venue setup typically includes microphone, projector, and standard laptop connections.',
+  'Slides in 16:9 format are preferred; PDF backup is recommended.',
+  'Bring your own adapter and, if needed, your own internet connection.',
+];
+
+const commercialPolicy = [
+  'Talks should be educational first. Product mentions are fine when directly relevant.',
+  'Avoid extended sales pitches or promotional decks.',
+  'If your topic includes commercial context, keep examples balanced and transparent.',
+];
+
+const materialsGuidelines = [
+  'Use respectful, inclusive language and examples suitable for a mixed audience.',
+  'Do not include confidential, sensitive, or non-permissioned client data.',
+  'Avoid discriminatory, explicit, or otherwise inappropriate material.',
 ];
 
 export function BecomeSpeaker() {
@@ -101,16 +112,17 @@ export function BecomeSpeaker() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
           <div className="max-w-4xl">
             <p className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">
-              Data & Analytics Wednesday
+              Do a Talk
             </p>
             <h1 className="text-4xl md:text-5xl text-[var(--color-primary)] mt-2">
-              Speaker Information
+              Speak at DAW Sydney
             </h1>
             <p className="text-sm text-[var(--color-text-muted)] mt-4">
-              Updated on Feb 17, 2025
+              Updated on February 19, 2026
             </p>
             <p className="text-lg text-[var(--color-text-muted)] leading-relaxed mt-6">
-              Share practical lessons and real stories with the DAW community in a relaxed, highly interactive event.
+              Thank you to every speaker who gives their time and experience to this community. Your talks are the
+              reason people keep coming back each month.
             </p>
           </div>
         </div>
@@ -121,36 +133,44 @@ export function BecomeSpeaker() {
           <article id="speaker-application" className="bg-white border border-[var(--color-border)] rounded-2xl p-6 md:p-8 space-y-8">
             <section>
               <h2 className="text-2xl md:text-3xl text-[var(--color-primary)] mb-4">
-                Speaking at DAW
+                Speaker Guidelines
               </h2>
               <p className="text-[var(--color-text-muted)] leading-relaxed mb-4">
-                We welcome speakers from all backgrounds, from first-time presenters to experienced conference speakers.
-                The goal is practical learning, open discussion, and strong networking.
+                We welcome first-time and experienced speakers. The goal is practical learning, open discussion, and
+                meaningful networking across the analytics community.
               </p>
 
-              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Format and flow</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Time</h3>
               <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--color-text-muted)] mb-5">
-                {formatNotes.map((note) => (
+                {timingNotes.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
               </ul>
 
-              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Audience expectations</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Format guidelines</h3>
               <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--color-text-muted)] mb-5">
-                {audienceNotes.map((note) => (
+                {formatGuidelines.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
               </ul>
 
-              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Talk guidance</h3>
-              <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-5">
-                Keep talks mostly non-commercial. DAW is an inclusive environment, so avoid inappropriate or
-                discriminatory content. If in doubt, check with organizers before the event.
-              </p>
-
-              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Timing and technical setup</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mb-2">Technical requirements</h3>
               <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--color-text-muted)]">
-                {setupNotes.map((note) => (
+                {technicalRequirements.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mt-6 mb-2">Commercial plugs policy</h3>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--color-text-muted)]">
+                {commercialPolicy.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+
+              <h3 className="text-lg font-semibold text-[var(--color-primary)] mt-6 mb-2">Appropriate materials</h3>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-[var(--color-text-muted)]">
+                {materialsGuidelines.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
               </ul>
@@ -160,8 +180,12 @@ export function BecomeSpeaker() {
 
             <section>
               <h2 className="text-2xl md:text-3xl text-[var(--color-primary)] mb-3">
-                Apply to Become a Speaker
+                Speaker Submission
               </h2>
+              <p className="text-sm text-[var(--color-text-muted)] mb-6">
+                Our Speaker Wrangler team reviews every submission and follows up to shape the best fit for upcoming
+                sessions.
+              </p>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <input
                   type="text"

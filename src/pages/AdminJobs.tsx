@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AdminBreadcrumbs } from '../components/AdminBreadcrumbs';
+import { AdminMagicLinkCard } from '../components/AdminMagicLinkCard';
+import { AdminStatusMessage } from '../components/AdminStatusMessage';
+import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import {
   archiveJobFromAdmin,
   extendJobListingFromAdmin,
@@ -15,12 +19,45 @@ import { sendAdminMagicLink } from '../services/siteSettings';
 import type { JobAdminNotification, JobPost } from '../types/jobs';
 
 type AdminStatusFilter = 'all' | JobPost['status'];
+type JobModerationAction = 'publish' | 'changes' | 'archive' | 'extend';
+
+const statusFilters: Array<{ value: AdminStatusFilter; label: string }> = [
+  { value: 'pending_review', label: 'Pending Review' },
+  { value: 'changes_requested', label: 'Changes Requested' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'pending_payment', label: 'Pending Payment' },
+  { value: 'draft', label: 'Drafts' },
+  { value: 'all', label: 'All' },
+];
 
 function formatDate(dateValue: string | null) {
   if (!dateValue) return 'N/A';
   const parsed = new Date(dateValue);
   if (Number.isNaN(parsed.getTime())) return 'N/A';
   return parsed.toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(dateValue: string | null) {
+  if (!dateValue) return 'N/A';
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) return 'N/A';
+  return parsed.toLocaleString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function isJobExpired(job: JobPost) {
+  if (job.status !== 'published' || !job.publishExpiresAt) {
+    return false;
+  }
+
+  const expiryTime = new Date(job.publishExpiresAt).getTime();
+  return Number.isFinite(expiryTime) && expiryTime <= Date.now();
 }
 
 function getStatusLabel(status: JobPost['status']) {
@@ -47,12 +84,72 @@ function getStatusBadgeClass(status: JobPost['status']) {
   return styles[status];
 }
 
+function getModerationOptions(status: JobPost['status']): Array<{ value: JobModerationAction; label: string }> {
+  if (status === 'archived') {
+    return [{ value: 'extend', label: 'Republish +3 Months' }];
+  }
+
+  if (status === 'published') {
+    return [
+      { value: 'extend', label: 'Extend +3 Months' },
+      { value: 'archive', label: 'Archive' },
+    ];
+  }
+
+  return [
+    { value: 'publish', label: 'Publish' },
+    { value: 'changes', label: 'Request Changes' },
+    { value: 'archive', label: 'Archive' },
+  ];
+}
+
+function getCompanyInitials(companyName: string) {
+  return companyName
+    .split(/\s+/)
+    .map((token) => token.trim().charAt(0))
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function JobCompanyAvatar({ job, size = 'sm' }: { job: JobPost; size?: 'sm' | 'md' }) {
+  const shouldLookupBranding = Boolean(job.companyWebsite && !job.brandLogoUrl);
+  const { branding: detectedBranding } = useCompanyBranding(shouldLookupBranding ? job.companyWebsite : null);
+  const logoUrl = job.brandLogoUrl ?? detectedBranding?.logoUrl ?? null;
+
+  const dimensions = size === 'md' ? 'h-10 w-10 rounded-lg' : 'h-8 w-8 rounded-md';
+  const fallbackTextSize = size === 'md' ? 'text-sm' : 'text-xs';
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={`${job.companyName} logo`}
+        loading="lazy"
+        className={`${dimensions} shrink-0 border border-[var(--color-border)] bg-white object-contain p-1`}
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`${dimensions} ${fallbackTextSize} shrink-0 flex items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)] font-semibold text-[var(--color-text-muted)]`}
+    >
+      {getCompanyInitials(job.companyName || 'Company')}
+    </div>
+  );
+}
+
 export function AdminJobs() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [notifications, setNotifications] = useState<JobAdminNotification[]>([]);
-  const [activeFilter, setActiveFilter] = useState<AdminStatusFilter>('pending_review');
+  const [activeFilter, setActiveFilter] = useState<AdminStatusFilter>('all');
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const [approvalSelections, setApprovalSelections] = useState<Record<string, JobModerationAction>>({});
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'success' | 'error' | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +157,7 @@ export function AdminJobs() {
   const [authLinkEmail, setAuthLinkEmail] = useState('');
   const [sendingMagicLink, setSendingMagicLink] = useState(false);
 
-  const refreshData = async (email: string | null, runExpirySync = false) => {
+  const refreshData = async (email: string | null, runExpirySync = true) => {
     if (!email) {
       setLoading(false);
       return;
@@ -97,7 +194,7 @@ export function AdminJobs() {
     ) {
       setStatusType('success');
       setStatusMessage(
-        `Expiry check: ${expiryResult.data.expiringSoon} expiring soon, ${expiryResult.data.expired} archived as expired.`
+        `Expiry check: ${expiryResult.data.expiringSoon} expiring soon, ${expiryResult.data.expired} moved offline.`
       );
     }
 
@@ -127,6 +224,16 @@ export function AdminJobs() {
     return jobs.filter((job) => job.status === activeFilter);
   }, [activeFilter, jobs]);
 
+  const selectedJobId = searchParams.get('jobId');
+
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) {
+      return null;
+    }
+
+    return jobs.find((job) => job.id === selectedJobId) ?? null;
+  }, [jobs, selectedJobId]);
+
   const counts = useMemo(() => {
     const base: Record<AdminStatusFilter, number> = {
       all: jobs.length,
@@ -150,15 +257,28 @@ export function AdminJobs() {
     [notifications]
   );
 
-  const handleAction = async (
-    job: JobPost,
-    action: 'publish' | 'changes' | 'archive' | 'extend'
-  ) => {
+  const selectedJobApprovalOptions = useMemo(() => {
+    if (!selectedJob) {
+      return [];
+    }
+
+    return getModerationOptions(selectedJob.status);
+  }, [selectedJob]);
+
+  const selectedApprovalAction = useMemo(() => {
+    if (!selectedJob) {
+      return null;
+    }
+
+    return approvalSelections[selectedJob.id] ?? selectedJobApprovalOptions[0]?.value ?? null;
+  }, [approvalSelections, selectedJob, selectedJobApprovalOptions]);
+
+  const handleAction = async (job: JobPost, action: JobModerationAction) => {
     setStatusMessage(null);
     setStatusType(null);
     setActioningJobId(job.id);
 
-    const reviewNote = reviewNotes[job.id]?.trim() ?? '';
+    const reviewNote = (reviewNotes[job.id] ?? job.reviewNote ?? '').trim();
     const result =
       action === 'publish'
         ? await publishJobFromAdmin(job.id, reviewNote)
@@ -187,7 +307,7 @@ export function AdminJobs() {
     setStatusType('success');
     setStatusMessage(label);
     setActioningJobId(null);
-    await refreshData(adminEmail, false);
+    await refreshData(adminEmail, true);
   };
 
   const handleMarkNotificationRead = async (notificationId: string) => {
@@ -198,7 +318,7 @@ export function AdminJobs() {
       return;
     }
 
-    await refreshData(adminEmail, false);
+    await refreshData(adminEmail, true);
   };
 
   const handleSendMagicLink = async (event: FormEvent<HTMLFormElement>) => {
@@ -220,247 +340,67 @@ export function AdminJobs() {
     setStatusMessage(result.message ?? 'Admin magic link sent.');
   };
 
+  const handleApplySelectedAction = async () => {
+    if (!selectedJob || !selectedApprovalAction) {
+      return;
+    }
+
+    await handleAction(selectedJob, selectedApprovalAction);
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
-      <section className="bg-white border-b border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-18">
-          <Link
-            to="/admin"
-            className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-5"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Admin Panel
-          </Link>
-          <span className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">
-            Admin
-          </span>
-          <h1 className="text-4xl md:text-5xl text-[var(--color-primary)] mt-2 mb-4">
+      <section>
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-12">
+          <AdminBreadcrumbs
+            items={[
+              { label: 'Admin', href: '/admin' },
+              { label: 'Jobs', href: '/admin/jobs' },
+              ...(selectedJob ? [{ label: selectedJob.title }] : []),
+            ]}
+          />
+          <h1 className="mt-4 text-4xl text-[var(--color-primary)] md:text-5xl">
             Job Moderation Dashboard
           </h1>
-          <p className="text-[var(--color-text-muted)] max-w-3xl">
-            Review incoming listings, publish approved roles, request changes, and manage expiry/extension cycles.
+          <p className="mt-3 max-w-3xl text-[var(--color-text-muted)]">
+            Review incoming listings, approve updates, and keep expired jobs offline.
           </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-4">
-            Signed in as: <span className="font-medium">{adminEmail ?? 'Not signed in'}</span>
-          </p>
-          {adminEmail && (
-            <button
-              type="button"
-              onClick={() => void refreshData(adminEmail, true)}
-              className="mt-4 inline-flex items-center px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-            >
-              Refresh Queue + Run Expiry Check
-            </button>
-          )}
         </div>
       </section>
 
-      <section className="py-10 md:py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-          {statusMessage && (
-            <div
-              className={`rounded-xl border p-4 ${
-                statusType === 'error'
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              }`}
-            >
-              {statusMessage}
-            </div>
-          )}
+      <section>
+        <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6">
+          <AdminStatusMessage
+            status={
+              statusMessage
+                ? {
+                    type: statusType === 'error' ? 'error' : 'success',
+                    message: statusMessage,
+                  }
+                : null
+            }
+          />
 
           {!adminEmail && (
-            <div className="bg-white rounded-2xl border border-[var(--color-border)] p-8">
-              <h2 className="text-2xl text-[var(--color-primary)] mb-2">Admin sign-in required</h2>
-              <p className="text-[var(--color-text-muted)] mb-4">
-                Use your Supabase magic-link session for an admin email listed in `job_board_admins`.
-              </p>
-              <form onSubmit={handleSendMagicLink} className="space-y-3 max-w-md">
-                <label className="block">
-                  <span className="block text-sm text-[var(--color-text-muted)] mb-1">Admin email</span>
-                  <input
-                    type="email"
-                    value={authLinkEmail}
-                    onChange={(event) => setAuthLinkEmail(event.target.value)}
-                    placeholder="you@company.com"
-                    autoComplete="email"
-                    className="w-full px-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={sendingMagicLink}
-                  className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
-                    sendingMagicLink
-                      ? 'bg-slate-300 text-slate-600 cursor-not-allowed'
-                      : 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]'
-                  }`}
-                >
-                  {sendingMagicLink ? 'Sending...' : 'Send Admin Magic Link'}
-                </button>
-              </form>
-            </div>
+            <AdminMagicLinkCard
+              email={authLinkEmail}
+              onEmailChange={setAuthLinkEmail}
+              onSubmit={handleSendMagicLink}
+              sending={sendingMagicLink}
+              description="Use your Supabase magic-link session for an admin email listed in `job_board_admins`."
+              className="p-8"
+              titleClassName="mb-2 text-2xl text-[var(--color-primary)]"
+              descriptionClassName="mb-4 text-[var(--color-text-muted)]"
+            />
           )}
 
           {adminEmail && (
             <>
-              <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-                <div className="bg-white rounded-2xl border border-[var(--color-border)] p-6">
-                  <div className="flex flex-wrap items-center gap-2 mb-5">
-                    {(
-                      [
-                        ['pending_review', 'Pending Review'],
-                        ['changes_requested', 'Changes Requested'],
-                        ['published', 'Published'],
-                        ['archived', 'Archived'],
-                        ['pending_payment', 'Pending Payment'],
-                        ['draft', 'Drafts'],
-                        ['all', 'All'],
-                      ] as Array<[AdminStatusFilter, string]>
-                    ).map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setActiveFilter(value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                          activeFilter === value
-                            ? 'bg-[var(--color-accent)] text-white'
-                            : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                        }`}
-                      >
-                        {label} ({counts[value]})
-                      </button>
-                    ))}
-                  </div>
-
-                  {loading && (
-                    <p className="text-sm text-[var(--color-text-muted)]">Loading admin queue...</p>
-                  )}
-
-                  {!loading && filteredJobs.length === 0 && (
-                    <p className="text-sm text-[var(--color-text-muted)]">No jobs in this queue.</p>
-                  )}
-
-                  <div className="space-y-4">
-                    {filteredJobs.map((job) => (
-                      <article
-                        key={job.id}
-                        className="rounded-xl border border-[var(--color-border)] p-4 md:p-5"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
-                          <div>
-                            <h3 className="text-xl text-[var(--color-primary)]">{job.title}</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">{job.companyName}</p>
-                            <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                              Poster: {job.postedByEmail}
-                            </p>
-                          </div>
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(job.status)}`}
-                          >
-                            {getStatusLabel(job.status)}
-                          </span>
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-3 text-xs text-[var(--color-text-muted)] mb-3">
-                          <p>
-                            Package: <span className="font-medium text-[var(--color-text)]">{job.packageType ?? 'N/A'}</span>
-                          </p>
-                          <p>
-                            Payment: <span className="font-medium text-[var(--color-text)]">{job.paymentStatus}</span>
-                          </p>
-                          <p>
-                            Expires: <span className="font-medium text-[var(--color-text)]">{formatDate(job.publishExpiresAt)}</span>
-                          </p>
-                        </div>
-
-                        <textarea
-                          value={reviewNotes[job.id] ?? job.reviewNote ?? ''}
-                          onChange={(event) =>
-                            setReviewNotes((current) => ({ ...current, [job.id]: event.target.value }))
-                          }
-                          placeholder="Admin review note (required for request changes, optional for publish/archive)"
-                          rows={3}
-                          className="w-full px-3 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                        />
-
-                        <div className="flex flex-wrap items-center gap-2 mt-3">
-                          {(job.status === 'pending_review' ||
-                            job.status === 'changes_requested' ||
-                            job.status === 'pending_payment') && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => void handleAction(job, 'publish')}
-                                disabled={actioningJobId === job.id}
-                                className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
-                              >
-                                Publish
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void handleAction(job, 'changes')}
-                                disabled={actioningJobId === job.id}
-                                className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 disabled:opacity-60"
-                              >
-                                Request Changes
-                              </button>
-                            </>
-                          )}
-
-                          {job.status === 'published' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleAction(job, 'extend')}
-                              disabled={actioningJobId === job.id}
-                              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
-                            >
-                              Extend +3 Months
-                            </button>
-                          )}
-
-                          {job.status === 'archived' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleAction(job, 'extend')}
-                              disabled={actioningJobId === job.id}
-                              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
-                            >
-                              Republish +3 Months
-                            </button>
-                          )}
-
-                          {job.status !== 'archived' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleAction(job, 'archive')}
-                              disabled={actioningJobId === job.id}
-                              className="px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-60"
-                            >
-                              Archive
-                            </button>
-                          )}
-
-                          <Link
-                            to={`/jobs/${job.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                          >
-                            Open Public Page
-                          </Link>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <aside className="bg-white rounded-2xl border border-[var(--color-border)] p-6 h-fit">
-                  <div className="flex items-center justify-between mb-4">
+              {!selectedJob && (
+                <article className="rounded-2xl border border-[var(--color-border)] bg-white p-6 md:p-7">
+                  <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl text-[var(--color-primary)]">Notifications</h2>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                    <span className="rounded-full bg-[var(--color-accent)]/10 px-2.5 py-1 text-xs text-[var(--color-accent)]">
                       {unreadNotifications.length} unread
                     </span>
                   </div>
@@ -479,10 +419,8 @@ export function AdminJobs() {
                             : 'border-[var(--color-border)] bg-[var(--color-surface)]'
                         }`}
                       >
-                        <h3 className="text-sm font-semibold text-[var(--color-primary)] mb-1">
-                          {notification.title}
-                        </h3>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-2">{notification.message}</p>
+                        <h3 className="mb-1 text-sm font-semibold text-[var(--color-primary)]">{notification.title}</h3>
+                        <p className="mb-2 text-xs text-[var(--color-text-muted)]">{notification.message}</p>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] text-[var(--color-text-muted)]">
                             {formatDate(notification.createdAt)}
@@ -500,8 +438,254 @@ export function AdminJobs() {
                       </article>
                     ))}
                   </div>
-                </aside>
-              </div>
+                </article>
+              )}
+
+              {!selectedJob && (
+                <article className="rounded-2xl border border-[var(--color-border)] bg-white p-6 md:p-7">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap gap-2">
+                      {statusFilters.map((filter) => (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setActiveFilter(filter.value)}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                            activeFilter === filter.value
+                              ? 'bg-[var(--color-accent)] text-white'
+                              : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                          }`}
+                        >
+                          {filter.label} ({counts[filter.value]})
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void refreshData(adminEmail, true)}
+                        aria-label="Refresh queue"
+                        title="Refresh queue"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                      </button>
+                      <Link
+                        to="/jobs/post"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-light)]"
+                      >
+                        Add New Job
+                      </Link>
+                    </div>
+                  </div>
+
+                  {loading && <p className="py-2 text-sm text-[var(--color-text-muted)]">Loading admin queue...</p>}
+
+                  {!loading && (
+                    <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
+                      <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
+                        <thead className="bg-[var(--color-surface)] text-left text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
+                          <tr>
+                            <th className="px-4 py-3 font-medium">Title</th>
+                            <th className="px-4 py-3 font-medium">Company</th>
+                            <th className="px-4 py-3 font-medium">Status</th>
+                            <th className="px-4 py-3 font-medium">Payment</th>
+                            <th className="px-4 py-3 font-medium">Expires</th>
+                            <th className="px-4 py-3 font-medium">Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[var(--color-border)] bg-white">
+                          {filteredJobs.length > 0 ? (
+                            filteredJobs.map((job) => {
+                              const expired = isJobExpired(job);
+                              const statusLabel = expired ? 'Offline (Expired)' : getStatusLabel(job.status);
+                              const statusClass = expired
+                                ? 'bg-slate-200 text-slate-700'
+                                : getStatusBadgeClass(job.status);
+
+                              return (
+                                <tr
+                                  key={job.id}
+                                  onClick={() => setSearchParams({ jobId: job.id })}
+                                  className={`cursor-pointer transition-colors hover:bg-[var(--color-surface)] ${
+                                    selectedJobId === job.id ? 'bg-[var(--color-accent)]/5' : ''
+                                  }`}
+                                >
+                                  <td className="px-4 py-3 font-medium text-[var(--color-primary)]">{job.title}</td>
+                                  <td className="px-4 py-3 text-[var(--color-text-muted)]">
+                                    <div className="flex items-center gap-3">
+                                      <JobCompanyAvatar job={job} />
+                                      <span>{job.companyName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClass}`}>
+                                      {statusLabel}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--color-text-muted)]">{job.paymentStatus}</td>
+                                  <td className="px-4 py-3 text-[var(--color-text-muted)]">{formatDate(job.publishExpiresAt)}</td>
+                                  <td className="px-4 py-3 text-[var(--color-text-muted)]">{formatDate(job.updatedAt)}</td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-6 text-center text-[var(--color-text-muted)]">
+                                No jobs found for this filter.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </article>
+              )}
+
+              {selectedJob && (
+                <article className="rounded-2xl border border-[var(--color-border)] bg-white p-6 md:p-7">
+                  <h2 className="text-2xl text-[var(--color-primary)]">Job Details</h2>
+                  <p className="mt-2 mb-5 text-sm text-[var(--color-text-muted)]">
+                    Review and moderate the selected listing.
+                  </p>
+
+                  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Company</p>
+                      <div className="mt-1 flex items-center gap-3">
+                        <JobCompanyAvatar job={selectedJob} size="md" />
+                        <p className="text-sm text-[var(--color-text)]">{selectedJob.companyName}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Poster</p>
+                      <p className="text-sm text-[var(--color-text)]">{selectedJob.postedByEmail}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Location</p>
+                      <p className="text-sm text-[var(--color-text)]">{selectedJob.locationText}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Expiry Date</p>
+                      <p className="text-sm text-[var(--color-text)]">{formatDate(selectedJob.publishExpiresAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Package</p>
+                      <p className="text-sm text-[var(--color-text)]">{selectedJob.packageType ?? 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Payment</p>
+                      <p className="text-sm text-[var(--color-text)]">{selectedJob.paymentStatus}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Last Updated</p>
+                      <p className="text-sm text-[var(--color-text)]">{formatDateTime(selectedJob.updatedAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Status</p>
+                      <p className="text-sm text-[var(--color-text)]">
+                        {isJobExpired(selectedJob) ? 'Offline (Expired)' : getStatusLabel(selectedJob.status)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isJobExpired(selectedJob) && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                      This job has passed its expiry date and is treated as offline.
+                    </div>
+                  )}
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:col-span-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Summary
+                      </p>
+                      <p className="mt-2 text-sm text-[var(--color-text)]">{selectedJob.summary}</p>
+                    </div>
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:col-span-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Responsibilities
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text)]">
+                        {selectedJob.responsibilities}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:col-span-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Requirements
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text)]">
+                        {selectedJob.requirements}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <label className="mb-1 block text-sm text-[var(--color-text-muted)]">Admin review note</label>
+                    <textarea
+                      value={reviewNotes[selectedJob.id] ?? selectedJob.reviewNote ?? ''}
+                      onChange={(event) =>
+                        setReviewNotes((current) => ({ ...current, [selectedJob.id]: event.target.value }))
+                      }
+                      placeholder="Required for request changes, optional for publish/archive"
+                      rows={4}
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-end gap-3">
+                    <label className="min-w-[220px] flex-1">
+                      <span className="mb-1 block text-sm text-[var(--color-text-muted)]">Job approval action</span>
+                      <select
+                        value={selectedApprovalAction ?? ''}
+                        onChange={(event) =>
+                          setApprovalSelections((current) => ({
+                            ...current,
+                            [selectedJob.id]: event.target.value as JobModerationAction,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                      >
+                        {selectedJobApprovalOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleApplySelectedAction()}
+                      disabled={actioningJobId === selectedJob.id || !selectedApprovalAction}
+                      className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-light)] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+                    >
+                      {actioningJobId === selectedJob.id ? 'Applying...' : 'Apply Action'}
+                    </button>
+
+                    <Link
+                      to={`/jobs/${selectedJob.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                    >
+                      Open Public Page
+                    </Link>
+                  </div>
+                </article>
+              )}
+
             </>
           )}
         </div>

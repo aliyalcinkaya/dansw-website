@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:speakers": "node scripts/seed_speakers_to_supabase.mjs"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.95.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

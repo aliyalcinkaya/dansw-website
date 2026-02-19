@@ -321,25 +321,65 @@ export function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Do a Talk Section */}
       <section className="py-20 bg-gradient-to-br from-[var(--color-primary)] to-slate-800 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-3xl md:text-4xl mb-6">
-            Ready to share your knowledge?
-          </h2>
-          <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-            We're always looking for passionate speakers to share their insights, 
-            experiences, and expertise with our community.
-          </p>
-          <Link
-            to="/become-a-speaker"
-            className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-primary)] font-semibold hover:bg-[var(--color-accent)] hover:text-white transition-all"
-          >
-            Become a Speaker
-            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <span className="inline-flex items-center rounded-full border border-white/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/90">
+                Do a Talk
+              </span>
+              <h2 className="mt-5 text-3xl md:text-4xl">
+                Share practical analytics lessons with the community
+              </h2>
+              <p className="mt-4 max-w-2xl text-white/80">
+                We welcome both first-time and experienced speakers. Sessions are practical, friendly, and built for
+                people who want real examples they can use the next day.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to="/become-a-speaker"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-[var(--color-primary)] transition-all hover:bg-[var(--color-accent)] hover:text-white"
+                >
+                  Submit a Talk
+                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <Link
+                  to="/events"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3 font-semibold text-white transition-all hover:bg-white/10"
+                >
+                  View Upcoming Sessions
+                </Link>
+              </div>
+            </div>
+
+            <aside className="rounded-3xl border border-white/15 bg-white/10 p-6 md:p-8">
+              <h3 className="text-2xl">Speaking At DAW Sydney</h3>
+              <p className="mt-3 text-sm text-white/80">
+              We prioritize inclusive, non-salesy talks with practical examples that help attendees level up.
+              </p>
+              <ul className="mt-5 space-y-3 text-sm text-white/90">
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--color-primary)]">1</span>
+                  Time: Typically 15-20 minutes plus Q&A
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--color-primary)]">2</span>
+                    Format: Slides, demos, case studies, panels, and conversations
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--color-primary)]">3</span>
+                  Audience: Analysts, marketers, engineers, product teams, and leaders
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[var(--color-primary)]">4</span>
+                  Support: Our team helps with timing, setup checks, and talk flow
+                </li>
+              </ul>
+            </aside>
+          </div>
         </div>
       </section>
 

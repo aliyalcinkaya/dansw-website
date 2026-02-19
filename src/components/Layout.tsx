@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import { AdminTopMenu } from './AdminTopMenu';
 import { Navigation } from './Navigation';
 import { NewsletterSignup } from './NewsletterSignup';
 import { SponsorBanner } from './SponsorBanner';
@@ -9,6 +11,9 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen flex flex-col">
       <a
@@ -17,12 +22,12 @@ export function Layout({ children }: LayoutProps) {
       >
         Skip to main content
       </a>
-      <Navigation />
+      {isAdminRoute ? <AdminTopMenu /> : <Navigation />}
       <main id="main-content" className="flex-grow">
         {children}
       </main>
-      <NewsletterSignup />
-      <SponsorBanner />
+      {!isAdminRoute && <NewsletterSignup />}
+      {!isAdminRoute && <SponsorBanner />}
       <Footer />
     </div>
   );

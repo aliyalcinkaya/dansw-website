@@ -55,43 +55,7 @@ export function UpcomingEventsSection({
     <section className="py-20 bg-[var(--color-surface)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <div className="mb-4 inline-flex items-center justify-center gap-2">
-            <h2 className="text-3xl md:text-4xl text-[var(--color-primary)]">
-              Upcoming Events
-            </h2>
-            {onRetry && (
-              <button
-                type="button"
-                onClick={onRetry}
-                disabled={loading}
-                aria-label="Refresh events"
-                title="Refresh events"
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition-all ${
-                  loading
-                    ? 'cursor-not-allowed opacity-60'
-                    : 'hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]'
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={loading ? 'animate-spin' : ''}
-                >
-                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                  <path d="M16 16h5v5" />
-                </svg>
-              </button>
-            )}
-          </div>
+          <h2 className="mb-4 text-3xl md:text-4xl text-[var(--color-primary)]">Upcoming Events</h2>
           <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto">
           Attendance is free, but registration is required as spaces are limited. Secure your ticket for the next meetup. 
           </p>
@@ -163,71 +127,111 @@ export function UpcomingEventsSection({
             </div>
           )}
 
-          {!loading && !error && upcomingEvents.map((event) => (
-            <div
-              key={event.id}
-              className="relative bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="flex flex-col md:flex-row md:items-center gap-6">
-                <div className="flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white event-gradient">
-                  <span className="text-2xl font-bold">{event.dayOfMonth}</span>
-                  <span className="text-xs uppercase tracking-wider opacity-80">{event.month}</span>
-                </div>
+          {!loading && !error && upcomingEvents.map((event) => {
+            const ticketUrl = event.eventbriteUrl || (event.url !== '#' ? event.url : null);
 
-                <div className="flex-grow">
-                  <h3 className="text-xl md:text-2xl text-[var(--color-primary)] mb-2 group-hover:text-[var(--color-accent)] transition-colors">
-                    {event.title}
-                  </h3>
-                  <div className="flex flex-wrap gap-4 text-sm text-[var(--color-text-muted)]">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {event.time}
-                    </span>
-                    <a
-                      href={getGoogleMapsSearchUrl(event.location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-[var(--color-accent)] hover:underline transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {event.location}
-                    </a>
+            return (
+              <div
+                key={event.id}
+                className="relative bg-white rounded-2xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm hover:shadow-md transition-all group"
+              >
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                  <div className="flex-shrink-0 w-20 h-20 rounded-xl flex flex-col items-center justify-center text-white event-gradient">
+                    <span className="text-2xl font-bold">{event.dayOfMonth}</span>
+                    <span className="text-xs uppercase tracking-wider opacity-80">{event.month}</span>
                   </div>
-                  {event.description && (
-                    <p className="mt-3 text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
-                  )}
-                </div>
 
-                <div className="flex-shrink-0">
-                  <div className="flex flex-col items-center gap-2">
-                    <a
-                      href={event.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]"
-                    >
-                      <svg className="w-[1.3rem] h-[1.3rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-                        <path d="m9 12 2 2 4-4" />
-                      </svg>
-                      Get Tickets
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                    <p className={`text-xs font-semibold text-center ${getTicketStatus(event).className}`}>
-                      {getTicketStatus(event).label}
-                    </p>
+                  <div className="flex-grow">
+                    <h3 className="text-xl md:text-2xl text-[var(--color-primary)] mb-2 group-hover:text-[var(--color-accent)] transition-colors">
+                      {event.title}
+                    </h3>
+                    <div className="flex flex-wrap gap-4 text-sm text-[var(--color-text-muted)]">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {event.time}
+                      </span>
+                      <a
+                        href={getGoogleMapsSearchUrl(event.location)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 hover:text-[var(--color-accent)] hover:underline transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {event.location}
+                      </a>
+                    </div>
+                    {event.description && (
+                      <p className="mt-3 text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
+                    )}
+
+                    {event.talks.length > 0 && (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {event.talks.slice(0, 2).map((talk) => (
+                          <article
+                            key={`${event.id}-${talk.id}`}
+                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+                          >
+                            <p className="text-sm font-semibold text-[var(--color-primary)] line-clamp-1">{talk.title}</p>
+                            <div className="mt-2 flex items-center gap-2">
+                              {talk.speaker?.photoUrl ? (
+                                <img
+                                  src={talk.speaker.photoUrl}
+                                  alt={`${talk.speaker.fullName} profile`}
+                                  className="h-8 w-8 rounded-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-xs font-semibold text-[var(--color-accent)]">
+                                  {(talk.speaker?.fullName || 'T').slice(0, 1).toUpperCase()}
+                                </div>
+                              )}
+                              <p className="text-xs text-[var(--color-text-muted)] line-clamp-1">
+                                {talk.speaker?.fullName || 'Speaker TBC'}
+                              </p>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-shrink-0">
+                    <div className="flex flex-col items-center gap-2">
+                      {ticketUrl ? (
+                        <a
+                          href={ticketUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]"
+                        >
+                          <svg className="w-[1.3rem] h-[1.3rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                            <path d="m9 12 2 2 4-4" />
+                          </svg>
+                          Get Tickets
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium bg-slate-200 text-slate-600">
+                          Ticket link coming soon
+                        </span>
+                      )}
+                      <p className={`text-xs font-semibold text-center ${getTicketStatus(event).className}`}>
+                        {getTicketStatus(event).label}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {showArchiveLink && !loading && !error && (

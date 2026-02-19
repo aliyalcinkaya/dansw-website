@@ -69,6 +69,25 @@ export interface EventbriteEventsResponse {
   events: EventbriteEvent[];
 }
 
+export interface DisplaySpeaker {
+  id: string;
+  fullName: string;
+  headline: string;
+  bio: string;
+  photoUrl: string | null;
+  linkedinUrl: string | null;
+  websiteUrl: string | null;
+}
+
+export interface DisplayTalk {
+  id: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+  speakerId: string | null;
+  speaker: DisplaySpeaker | null;
+}
+
 // Transformed event for UI display
 export interface DisplayEvent {
   id: string;
@@ -87,4 +106,8 @@ export interface DisplayEvent {
   seatCapacity: number | null;
   seatsRemaining: number | null;
   isLimitedSeats: boolean;
+  talks: DisplayTalk[];
+  source: 'community' | 'eventbrite';
+  eventbriteEventId: string | null;
+  eventbriteUrl: string | null;
 }

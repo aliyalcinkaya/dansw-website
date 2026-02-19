@@ -273,7 +273,12 @@ function isJobStillPublished(job: JobPost) {
 }
 
 function formatServiceError(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) return error.message;
+  if (error instanceof Error && error.message) {
+    if (error.message.toLowerCase().includes('stack depth limit exceeded')) {
+      return 'Database policy recursion detected. Run supabase/admin_rls_fix.sql in Supabase SQL Editor, then refresh.';
+    }
+    return error.message;
+  }
   return fallback;
 }
 

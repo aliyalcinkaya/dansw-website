@@ -39,8 +39,9 @@ A modern, responsive website for Sydney's premier data and analytics community.
 Create a `.env` file in the root directory:
 
 ```bash
-VITE_EVENTBRITE_PRIVATE_TOKEN=your_eventbrite_api_token
-VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
+VITE_EVENTBRITE_ORGANIZATION_ID=8179498448 # optional if EVENTBRITE_ORGANIZATION_ID is set as function secret
+VITE_SUPABASE_EVENTBRITE_FUNCTION=eventbrite-events
+VITE_SUPABASE_EVENTBRITE_FUNCTION_URL=https://your-project-ref.supabase.co/functions/v1/eventbrite-events # optional endpoint override
 VITE_LINKEDIN_POST_URLS=https://www.linkedin.com/feed/update/urn:li:activity:123...,https://www.linkedin.com/posts/your-page_activity-456...
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
@@ -56,6 +57,14 @@ VITE_STRIPE_STANDARD_PAYMENT_LINK=https://buy.stripe.com/your_standard_link     
 VITE_STRIPE_AMPLIFIED_PAYMENT_LINK=https://buy.stripe.com/your_amplified_link   # optional fallback
 VITE_BRANDFETCH_API_KEY=your_brandfetch_api_key_here                              # optional (job branding)
 VITE_MIXPANEL_TOKEN=your_mixpanel_project_token_here # optional
+```
+
+Set Eventbrite private credentials as Supabase Edge Function secrets (not `VITE_*` vars):
+
+```bash
+EVENTBRITE_PRIVATE_TOKEN=your_eventbrite_private_token
+EVENTBRITE_ORGANIZATION_ID=your_eventbrite_organization_id
+EVENTBRITE_ALLOWED_ORIGIN=http://localhost:5173,https://www.dawsydney.org.au
 ```
 
 ### Installation
@@ -96,12 +105,35 @@ Deploy that artifact to your target platform (for example Vercel, Netlify, Cloud
 
 ### Eventbrite Integration
 
-The site fetches events from Eventbrite using the private API. Set your credentials in `.env`:
+The site fetches events through the Supabase Edge Function `eventbrite-events`. Website-managed events and speaker/talk data are stored in Supabase and can be synced to Eventbrite from `/admin/events`.
+
+1. Run `supabase/events.sql` in Supabase SQL Editor.
+2. Add frontend env vars:
 
 ```bash
-VITE_EVENTBRITE_PRIVATE_TOKEN=your_token_here
-VITE_EVENTBRITE_ORGANIZATION_ID=8179498448
+VITE_SUPABASE_EVENTBRITE_FUNCTION=eventbrite-events
+VITE_SUPABASE_EVENTBRITE_FUNCTION_URL=https://your-project-ref.supabase.co/functions/v1/eventbrite-events # optional endpoint override
+VITE_EVENTBRITE_ORGANIZATION_ID=8179498448 # optional override
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
+
+3. Set Edge Function secrets:
+
+```bash
+supabase secrets set \
+  EVENTBRITE_PRIVATE_TOKEN=your_eventbrite_private_token \
+  EVENTBRITE_ORGANIZATION_ID=your_eventbrite_organization_id \
+  EVENTBRITE_ALLOWED_ORIGIN=http://localhost:5173,https://www.dawsydney.org.au
+```
+
+4. Deploy the function:
+
+```bash
+supabase functions deploy eventbrite-events
+```
+
+Do not expose the Eventbrite private token in `VITE_*` variables.
 
 ### LinkedIn News Embeds
 
@@ -198,6 +230,8 @@ insert into public.job_board_admins (email) values ('you@company.com');
 ```
 
 Admin magic-link sign-in only works for emails present in `job_board_admins`.
+
+If you see `stack depth limit exceeded` while performing admin writes, run `supabase/admin_rls_fix.sql` once in SQL Editor.
 
 Publish payment options:
 
