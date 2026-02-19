@@ -206,10 +206,15 @@ export function Events() {
                                   )
                                 ))}
                               </div>
+                            ) : (
+                              <span className="text-sm text-[var(--color-text-muted)]">TBC</span>
                             )}
                           </td>
                           <td className="px-4 py-4 align-top text-sm text-[var(--color-text-muted)]">
-                            {event.dayOfMonth} {event.month} {event.year}
+                            {event.date} | {event.time}
+                          </td>
+                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-muted)]">
+                            {event.location}
                           </td>
                         </tr>
                       );
