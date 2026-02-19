@@ -183,7 +183,7 @@ export function Events() {
                             </p>
                           </td>
                           <td className="px-4 py-4 align-top">
-                            {speakers.length > 0 && (
+                            {speakers.length > 0 ? (
                               <div className="flex items-center -space-x-2">
                                 {speakers.map((speaker) => (
                                   speaker.photoUrl ? (
