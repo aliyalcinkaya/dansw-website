@@ -116,24 +116,15 @@ export function AdminPanel() {
           )}
 
           {canShowAdminContent && (
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-5">
-              <article className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">
-                  Homepage
-                </p>
-                <h2 className="mt-2 text-2xl text-[var(--color-primary)]">Overview</h2>
-                <p className="mt-2 flex-grow text-sm text-[var(--color-text-muted)]">
-                  Manage website sections from dedicated admin pages.
-                </p>
-              </article>
-
-              <article className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Jobs</p>
-                <h2 className="mt-2 text-2xl text-[var(--color-primary)]">Moderation Queue</h2>
-                <p className="mt-2 flex-grow text-sm text-[var(--color-text-muted)]">
-                  Review submitted roles, publish listings, and manage expiry actions.
-                </p>
-                <div className="mt-5">
+            <article className="rounded-2xl border border-[var(--color-border)] bg-white">
+              <div className="divide-y divide-[var(--color-border)]">
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">Jobs Moderation Queue</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Review submitted roles, publish listings, and manage expiry actions.
+                    </p>
+                  </div>
                   <Link
                     to="/admin/jobs"
                     target="_blank"
@@ -143,15 +134,14 @@ export function AdminPanel() {
                     Open Jobs
                   </Link>
                 </div>
-              </article>
 
-              <article className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Events</p>
-                <h2 className="mt-2 text-2xl text-[var(--color-primary)]">Events Manager</h2>
-                <p className="mt-2 flex-grow text-sm text-[var(--color-text-muted)]">
-                  Create events, manage talk lineups, and sync updates to Eventbrite.
-                </p>
-                <div className="mt-5">
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">Events Manager</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Create events, manage talk lineups, and sync updates to Eventbrite.
+                    </p>
+                  </div>
                   <Link
                     to="/admin/events"
                     target="_blank"
@@ -161,15 +151,14 @@ export function AdminPanel() {
                     Open Events
                   </Link>
                 </div>
-              </article>
 
-              <article className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Speakers</p>
-                <h2 className="mt-2 text-2xl text-[var(--color-primary)]">Speaker Profiles</h2>
-                <p className="mt-2 flex-grow text-sm text-[var(--color-text-muted)]">
-                  Create and maintain speaker bios, photos, and profile links.
-                </p>
-                <div className="mt-5">
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">Speaker Profiles</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Create and maintain speaker bios, photos, and profile links.
+                    </p>
+                  </div>
                   <Link
                     to="/admin/speakers"
                     target="_blank"
@@ -179,26 +168,59 @@ export function AdminPanel() {
                     Open Speakers
                   </Link>
                 </div>
-              </article>
 
-              <article className="flex flex-col rounded-2xl border border-[var(--color-border)] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                  Social Media
-                </p>
-                <h2 className="mt-2 text-2xl text-[var(--color-primary)]">Posts</h2>
-                <p className="mt-2 flex-grow text-sm text-[var(--color-text-muted)]">
-                  Update LinkedIn post links shown on the homepage.
-                </p>
-                <div className="mt-5">
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">Social Media Posts</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Update LinkedIn post links shown on the homepage.
+                    </p>
+                  </div>
                   <Link
                     to="/admin/social-posts"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-light)]"
                   >
-                    Open Social Posts
+                    Open Social Media
                   </Link>
                 </div>
-              </article>
-            </div>
+
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">Form Routing</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Choose who receives and CCs website form submissions.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/form-routing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-light)]"
+                  >
+                    Open Form Routing
+                  </Link>
+                </div>
+
+                <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl text-[var(--color-primary)]">User Management</h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                      Invite additional admin users and manage admin directory access.
+                    </p>
+                  </div>
+                  <Link
+                    to="/admin/users"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-light)]"
+                  >
+                    Open User Manager
+                  </Link>
+                </div>
+              </div>
+            </article>
           )}
         </div>
       </section>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { DisplayEvent } from '../types/eventbrite';
-import { fetchAllEvents } from '../services/eventbrite';
+import { fetchAllEvents, getCachedAllEventsSnapshot } from '../services/eventbrite';
 import { shouldForceEventbriteRefreshOnInitialLoad } from './useEventbriteRefreshMode';
 
 interface UseAllEventsResult {
@@ -11,12 +11,15 @@ interface UseAllEventsResult {
 }
 
 export function useAllEvents(): UseAllEventsResult {
-  const [events, setEvents] = useState<DisplayEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialEvents = getCachedAllEventsSnapshot();
+  const [events, setEvents] = useState<DisplayEvent[]>(initialEvents);
+  const [loading, setLoading] = useState(initialEvents.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async (forceRefresh = false) => {
-    setLoading(true);
+  const fetchEvents = async (forceRefresh = false, showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -24,14 +27,20 @@ export function useAllEvents(): UseAllEventsResult {
       setEvents(allEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load events');
-      setEvents([]);
+      if (showLoading) {
+        setEvents([]);
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    void fetchEvents(shouldForceEventbriteRefreshOnInitialLoad());
+    const forceRefresh = shouldForceEventbriteRefreshOnInitialLoad();
+    const showLoading = initialEvents.length === 0 || forceRefresh;
+    void fetchEvents(forceRefresh, showLoading);
   }, []);
 
   return {

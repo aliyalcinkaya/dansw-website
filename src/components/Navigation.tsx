@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from './Logo';
+import { trackEvent } from '../services/analytics';
 
 const navLinks = [
   { path: '/', label: 'Home' },
   { path: '/about', label: 'About' },
   { path: '/events', label: 'Events' },
   { path: '/jobs', label: 'Jobs' },
+  { path: '/contact', label: 'Contact' },
   { path: '/become-a-speaker', label: 'Become a Speaker' },
 ];
 
@@ -19,6 +21,14 @@ export function Navigation() {
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
+
+  const handleNavClick = (link: { path: string; label: string }, menuType: 'desktop' | 'mobile') => {
+    trackEvent('nav_link_click', {
+      link_path: link.path,
+      link_label: link.label,
+      menu_type: menuType,
+    });
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -84,6 +94,7 @@ export function Navigation() {
               <Link
                 key={link.path}
                 to={link.path}
+                onClick={() => handleNavClick(link, 'desktop')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   location.pathname === link.path
                     ? 'bg-[var(--color-accent)] text-white'
@@ -98,7 +109,13 @@ export function Navigation() {
           {/* Mobile menu button */}
           <button
             ref={menuButtonRef}
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              const nextOpenState = !isOpen;
+              setIsOpen(nextOpenState);
+              trackEvent('mobile_menu_toggle', {
+                is_open: nextOpenState,
+              });
+            }}
             className="md:hidden p-2 rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] transition-colors"
             aria-label="Toggle menu"
             aria-expanded={isOpen}
@@ -141,7 +158,10 @@ export function Navigation() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    handleNavClick(link, 'mobile');
+                    setIsOpen(false);
+                  }}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     location.pathname === link.path
                       ? 'bg-[var(--color-accent)] text-white'

@@ -4,6 +4,7 @@ import { MarkdownContent, stripMarkdown } from '../components/MarkdownContent';
 import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { getReadableTextColor } from '../services/brandfetch';
 import { fetchPublishedJobBySlug, formatSalaryRange, submitJobApplication } from '../services/jobs';
+import { trackEvent } from '../services/analytics';
 import type { JobPost } from '../types/jobs';
 
 interface ApplicationFormState {
@@ -136,6 +137,10 @@ export function JobDetail() {
   const openEasyApplyModal = () => {
     setApplyStatus(null);
     setIsEasyApplyModalOpen(true);
+    trackEvent('job_easy_apply_modal_open', {
+      job_id: job?.id ?? '',
+      job_slug: job?.slug ?? slug ?? '',
+    });
   };
 
   const handleApplicationSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -144,6 +149,11 @@ export function JobDetail() {
 
     setIsSubmitting(true);
     setApplyStatus(null);
+    trackEvent('job_easy_apply_submit', {
+      job_id: job.id,
+      job_slug: job.slug,
+      company_name: job.companyName,
+    });
 
     const result = await submitJobApplication({
       jobPostId: job.id,
@@ -156,6 +166,11 @@ export function JobDetail() {
 
     if (!result.ok) {
       setApplyStatus({ type: 'error', message: result.message ?? 'Unable to submit application.' });
+      trackEvent('job_easy_apply_error', {
+        job_id: job.id,
+        job_slug: job.slug,
+        message: result.message ?? 'Unable to submit application.',
+      });
       setIsSubmitting(false);
       return;
     }
@@ -167,6 +182,11 @@ export function JobDetail() {
     setApplicationForm(initialApplicationState);
     setIsSubmitting(false);
     setIsEasyApplyModalOpen(false);
+    trackEvent('job_easy_apply_success', {
+      job_id: job.id,
+      job_slug: job.slug,
+      company_name: job.companyName,
+    });
   };
 
   if (loading) {
@@ -196,6 +216,7 @@ export function JobDetail() {
             <p className="text-[var(--color-text-muted)] mb-6">{error ?? 'This job listing could not be found.'}</p>
             <Link
               to="/jobs"
+              onClick={() => trackEvent('job_detail_back_to_jobs_click', { source: 'error_state' })}
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
             >
               Back to Jobs
@@ -210,7 +231,11 @@ export function JobDetail() {
     <div className="min-h-screen bg-[var(--color-surface)]">
       <section className="bg-white border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
-          <Link to="/jobs" className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-6">
+          <Link
+            to="/jobs"
+            onClick={() => trackEvent('job_detail_back_to_jobs_click', { source: 'page_header' })}
+            className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-6"
+          >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -277,6 +302,14 @@ export function JobDetail() {
                         href={job.externalApplyUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() =>
+                          trackEvent('job_external_apply_click', {
+                            job_id: job.id,
+                            job_slug: job.slug,
+                            company_name: job.companyName,
+                            target: job.externalApplyUrl ?? '',
+                          })
+                        }
                         className="w-full sm:w-auto sm:max-w-xs flex-1 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white text-black font-semibold hover:bg-slate-100 transition-all"
                       >
                         Apply on Company Website
@@ -344,7 +377,14 @@ export function JobDetail() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsEasyApplyModalOpen(false)}
+                onClick={() => {
+                  setIsEasyApplyModalOpen(false);
+                  trackEvent('job_easy_apply_modal_close', {
+                    job_id: job.id,
+                    job_slug: job.slug,
+                    source: 'modal_header',
+                  });
+                }}
                 className="p-2 rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)]"
                 aria-label="Close easy apply form"
               >
@@ -413,7 +453,14 @@ export function JobDetail() {
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsEasyApplyModalOpen(false)}
+                  onClick={() => {
+                    setIsEasyApplyModalOpen(false);
+                    trackEvent('job_easy_apply_modal_close', {
+                      job_id: job.id,
+                      job_slug: job.slug,
+                      source: 'modal_cancel',
+                    });
+                  }}
                   className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white border border-[var(--color-border)] text-[var(--color-text)] font-medium hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
                 >
                   Cancel

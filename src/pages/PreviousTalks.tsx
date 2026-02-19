@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePastEvents } from '../hooks/usePastEvents';
-import { getGoogleMapsSearchUrl } from '../utils/maps';
+import { trackEvent } from '../services/analytics';
 
 export function PreviousTalks() {
   const { events, loading, error } = usePastEvents();
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   const filteredEvents = events.filter(event => {
     if (!searchQuery) return true;
@@ -92,17 +93,7 @@ export function PreviousTalks() {
               </svg>
               <h3 className="text-xl text-[var(--color-primary)] mb-2">Unable to load events</h3>
               <p className="text-[var(--color-text-muted)] mb-4">{error}</p>
-              <a
-                href="https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-[var(--color-accent)] font-medium hover:underline"
-              >
-                View events on Eventbrite
-                <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+              <p className="text-sm text-[var(--color-text-muted)]">Please try again in a few minutes.</p>
             </div>
           )}
 
@@ -123,127 +114,105 @@ export function PreviousTalks() {
 
           {/* Events List */}
           {!loading && !error && filteredEvents.length > 0 && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event, index) => {
-                const eventbriteLink = event.eventbriteUrl || (event.url !== '#' ? event.url : null);
+            <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-[var(--color-border)]">
+                  <thead className="bg-[var(--color-surface)]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Event
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Speakers
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                        Event Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border)] bg-white">
+                    {filteredEvents.map((event) => {
+                      const speakers = event.talks
+                        .reduce<NonNullable<(typeof event.talks)[number]['speaker']>[]>((acc, talk) => {
+                          if (!talk.speaker) {
+                            return acc;
+                          }
 
-                return (
-                  <article
-                    key={event.id}
-                    className="group bg-white rounded-2xl border border-[var(--color-border)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                  {/* Colored header */}
-                  <div className="h-2 event-gradient"></div>
-                  
-                  <div className="p-6">
-                    {/* Date badge */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-14 h-14 rounded-xl event-gradient flex flex-col items-center justify-center text-white">
-                        <span className="text-lg font-bold leading-none">{event.dayOfMonth}</span>
-                        <span className="text-[10px] uppercase tracking-wider opacity-80">{event.month}</span>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">
-                          {event.year}
-                        </span>
-                        <p className="text-sm text-[var(--color-text-muted)]">{event.time}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Title */}
-                    <h3 className="text-xl text-[var(--color-primary)] mb-3 group-hover:text-[var(--color-accent)] transition-colors line-clamp-2">
-                      {event.title}
-                    </h3>
+                          if (acc.some((speaker) => speaker.id === talk.speaker?.id)) {
+                            return acc;
+                          }
 
-                    {event.talks.length > 0 && (
-                      <div className="mb-4 space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                          Talks
-                        </p>
-                        {event.talks.slice(0, 2).map((talk) => (
-                          <div
-                            key={`${event.id}-${talk.id}`}
-                            className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5"
-                          >
-                            {talk.speaker?.photoUrl ? (
-                              <img
-                                src={talk.speaker.photoUrl}
-                                alt={`${talk.speaker.fullName} profile`}
-                                className="h-10 w-10 rounded-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-xs font-semibold text-[var(--color-accent)]">
-                                {(talk.speaker?.fullName || 'T').slice(0, 1).toUpperCase()}
+                          acc.push(talk.speaker);
+                          return acc;
+                        }, [])
+                        .slice(0, 2);
+
+                      return (
+                        <tr
+                          key={event.id}
+                          tabIndex={0}
+                          role="link"
+                          aria-label={`Open details for ${event.title}`}
+                          className="cursor-pointer transition-colors hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] focus:outline-none"
+                          onClick={() => {
+                            trackEvent('previous_talks_row_click', {
+                              event_id: event.id,
+                              event_title: event.title,
+                            });
+                            navigate(`/talks/${event.id}`);
+                          }}
+                          onKeyDown={(eventKey) => {
+                            if (eventKey.key === 'Enter' || eventKey.key === ' ') {
+                              eventKey.preventDefault();
+                              trackEvent('previous_talks_row_click', {
+                                event_id: event.id,
+                                event_title: event.title,
+                              });
+                              navigate(`/talks/${event.id}`);
+                            }
+                          }}
+                        >
+                          <td className="px-4 py-4 align-top">
+                            <p className="text-sm font-semibold text-[var(--color-primary)]">{event.title}</p>
+                            <p className="mt-1 text-sm text-[var(--color-text-muted)] line-clamp-2">
+                              {event.description || 'Details coming soon.'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-4 align-top">
+                            {speakers.length > 0 && (
+                              <div className="flex items-center -space-x-2">
+                                {speakers.map((speaker) => (
+                                  speaker.photoUrl ? (
+                                    <img
+                                      key={speaker.id}
+                                      src={speaker.photoUrl}
+                                      alt={`${speaker.fullName} profile`}
+                                      className="h-9 w-9 rounded-full border-2 border-white object-cover"
+                                      loading="lazy"
+                                      title={speaker.fullName}
+                                    />
+                                  ) : (
+                                    <div
+                                      key={speaker.id}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[var(--color-accent)]/10 text-xs font-semibold text-[var(--color-accent)]"
+                                      title={speaker.fullName}
+                                    >
+                                      {speaker.fullName.slice(0, 1).toUpperCase()}
+                                    </div>
+                                  )
+                                ))}
                               </div>
                             )}
-                            <div className="min-w-0">
-                              <p className="line-clamp-1 text-sm font-medium text-[var(--color-primary)]">{talk.title}</p>
-                              <p className="line-clamp-1 text-xs text-[var(--color-text-muted)]">
-                                {talk.speaker?.fullName || 'Speaker TBC'}
-                                {talk.speaker?.headline ? ` - ${talk.speaker.headline}` : ''}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Location */}
-                    <a
-                      href={getGoogleMapsSearchUrl(event.location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] mb-3 hover:text-[var(--color-accent)] hover:underline transition-colors"
-                    >
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="truncate">{event.location}</span>
-                    </a>
-                    
-                    {/* Description */}
-                    {event.description && (
-                      <p className="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-3">
-                        {event.description}
-                      </p>
-                    )}
-                    
-                    {/* Action */}
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        to={`/talks/${event.id}`}
-                        className="w-full py-2 rounded-lg bg-[var(--color-accent)] text-sm font-medium text-white hover:bg-[var(--color-accent-light)] transition-all flex items-center justify-center gap-2"
-                      >
-                        View Talk Details
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
-                      {eventbriteLink ? (
-                        <a
-                          href={eventbriteLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all flex items-center justify-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                          Open in Eventbrite
-                        </a>
-                      ) : (
-                        <span className="w-full py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium text-slate-500 flex items-center justify-center gap-2 bg-slate-100">
-                          Eventbrite link coming soon
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </article>
-                );
-              })}
+                          </td>
+                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-muted)]">
+                            {event.dayOfMonth} {event.month} {event.year}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -260,6 +229,7 @@ export function PreviousTalks() {
           </p>
           <Link
             to="/become-a-speaker"
+            onClick={() => trackEvent('previous_talks_cta_click', { cta_id: 'submit_talk_proposal', target: '/become-a-speaker' })}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Submit a Talk Proposal

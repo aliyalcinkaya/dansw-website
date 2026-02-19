@@ -2,7 +2,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.form_submissions (
   id uuid primary key default gen_random_uuid(),
-  type text not null check (type in ('member', 'speaker', 'sponsor')),
+  type text not null check (type in ('general', 'member', 'speaker', 'sponsor')),
   source text not null,
   email text not null,
   name text,
@@ -19,6 +19,14 @@ create table if not exists public.form_submissions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.form_submissions
+  drop constraint if exists form_submissions_type_check;
+
+alter table public.form_submissions
+  add constraint form_submissions_type_check check (
+    type in ('general', 'member', 'speaker', 'sponsor')
+  );
 
 create index if not exists form_submissions_created_at_idx on public.form_submissions (created_at desc);
 create index if not exists form_submissions_type_idx on public.form_submissions (type);
@@ -45,7 +53,7 @@ on public.form_submissions
 for insert
 to anon, authenticated
 with check (
-  type in ('member', 'speaker', 'sponsor')
+  type in ('general', 'member', 'speaker', 'sponsor')
   and coalesce(website, '') = ''
 );
 

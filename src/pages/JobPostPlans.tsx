@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { JOB_PACKAGES } from '../services/jobs';
+import { trackEvent } from '../services/analytics';
 
 export function JobPostPlans() {
   const paymentsDisabled = import.meta.env.VITE_JOBS_DISABLE_PAYMENTS?.trim().toLowerCase() === 'true';
@@ -10,6 +11,7 @@ export function JobPostPlans() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
           <Link
             to="/jobs"
+            onClick={() => trackEvent('job_post_plans_back_click', { target: '/jobs' })}
             className="flex w-fit items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-6"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +93,12 @@ export function JobPostPlans() {
 
                 <Link
                   to={`/jobs/submit?plan=${pkg.type}`}
+                  onClick={() =>
+                    trackEvent('job_post_plan_select', {
+                      plan_type: pkg.type,
+                      plan_price_aud: pkg.priceAUD,
+                    })
+                  }
                   className="mt-auto inline-flex items-center justify-center px-5 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
                 >
                   Select Plan

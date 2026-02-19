@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { submitSponsorInquiry } from '../services/forms';
+import { trackEvent } from '../services/analytics';
 
 interface FormData {
   name: string;
@@ -96,6 +97,10 @@ export function BecomeSponsor() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError('');
+    trackEvent('sponsor_inquiry_submit', {
+      source: '/become-a-sponsor',
+      sponsorship_type: formData.sponsorshipType || 'unknown',
+    });
 
     try {
       const result = await submitSponsorInquiry({
@@ -106,12 +111,23 @@ export function BecomeSponsor() {
 
       if (!result.ok) {
         setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        trackEvent('sponsor_inquiry_error', {
+          source: '/become-a-sponsor',
+          message: result.message ?? 'Unable to submit right now. Please try again.',
+        });
         return;
       }
 
       setIsSubmitted(true);
+      trackEvent('sponsor_inquiry_success', {
+        source: '/become-a-sponsor',
+      });
     } catch {
       setSubmitError('Unable to submit right now. Please try again.');
+      trackEvent('sponsor_inquiry_error', {
+        source: '/become-a-sponsor',
+        message: 'Unexpected submit error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -132,6 +148,7 @@ export function BecomeSponsor() {
           </p>
           <a
             href="/"
+            onClick={() => trackEvent('sponsor_inquiry_return_home_click')}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Return Home
@@ -365,6 +382,11 @@ export function BecomeSponsor() {
                   href="/pdfs/2025_daw_sponsor_pack.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackEvent('sponsor_pack_download_click', {
+                      target: '/pdfs/2025_daw_sponsor_pack.pdf',
+                    })
+                  }
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-[var(--color-accent)] font-semibold text-sm hover:bg-white/90 transition-colors"
                 >
                   Download PDF
@@ -381,6 +403,11 @@ export function BecomeSponsor() {
                 </p>
                 <a
                   href="mailto:commitee@wawsydney.com"
+                  onClick={() =>
+                    trackEvent('sponsor_contact_click', {
+                      target: 'mailto:commitee@wawsydney.com',
+                    })
+                  }
                   className="inline-flex items-center gap-2 text-[var(--color-accent)] text-sm font-medium hover:gap-3 transition-all"
                 >
                   Contact the team
@@ -409,6 +436,7 @@ export function BecomeSponsor() {
                 </p>
                 <a
                   href="/"
+                  onClick={() => trackEvent('sponsor_view_current_sponsors_click', { target: '/' })}
                   className="inline-flex items-center gap-2 text-[var(--color-accent)] text-sm font-medium hover:gap-3 transition-all"
                 >
                   View current sponsors

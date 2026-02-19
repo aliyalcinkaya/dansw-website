@@ -4,6 +4,7 @@ import { stripMarkdown } from '../components/MarkdownContent';
 import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { getReadableTextColor } from '../services/brandfetch';
 import { fetchPublishedJobs, formatSalaryRange } from '../services/jobs';
+import { trackEvent } from '../services/analytics';
 import type { EmploymentType, JobPost, LocationMode } from '../types/jobs';
 
 type EmploymentFilter = 'all' | EmploymentType;
@@ -97,6 +98,14 @@ function JobListingCard({ job }: { job: JobPost }) {
     <article className="bg-white rounded-2xl border border-[var(--color-border)] overflow-hidden hover:shadow-md transition-all">
       <Link
         to={`/jobs/${job.slug}`}
+        onClick={() =>
+          trackEvent('jobs_view_details_click', {
+            job_id: job.id,
+            job_slug: job.slug,
+            company_name: job.companyName,
+            click_area: 'card_header',
+          })
+        }
         className="block p-4 hover:opacity-95 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
         style={headerStyle}
         aria-label={`View ${job.title} at ${job.companyName}`}
@@ -160,6 +169,14 @@ function JobListingCard({ job }: { job: JobPost }) {
           </p>
           <Link
             to={`/jobs/${job.slug}`}
+            onClick={() =>
+              trackEvent('jobs_view_details_click', {
+                job_id: job.id,
+                job_slug: job.slug,
+                company_name: job.companyName,
+                click_area: 'card_footer',
+              })
+            }
             className="inline-flex items-center text-sm font-medium text-[var(--color-accent)] hover:underline"
           >
             View details
@@ -247,6 +264,7 @@ export function Jobs() {
             <div className="flex-shrink-0">
               <Link
                 to="/jobs/post"
+                onClick={() => trackEvent('jobs_submit_job_post_click', { source: 'hero' })}
                 className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
               >
                 Submit a Job Post
@@ -332,6 +350,7 @@ export function Jobs() {
               </p>
               <Link
                 to="/jobs/post"
+                onClick={() => trackEvent('jobs_submit_job_post_click', { source: 'empty_state' })}
                 className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
               >
                 Post a Job

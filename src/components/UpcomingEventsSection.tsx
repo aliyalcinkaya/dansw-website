@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { DisplayEvent } from '../types/eventbrite';
 import { getGoogleMapsSearchUrl } from '../utils/maps';
+import { trackEvent } from '../services/analytics';
 
 const eventbriteOrgUrl = 'https://www.eventbrite.com.au/o/data-analytics-wednesday-sydney-8179498448';
 
@@ -85,7 +86,10 @@ export function UpcomingEventsSection({
                   {onRetry && (
                     <button
                       type="button"
-                      onClick={onRetry}
+                      onClick={() => {
+                        trackEvent('upcoming_events_retry_click');
+                        onRetry();
+                      }}
                       className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-medium hover:bg-[var(--color-accent-light)] transition-all"
                     >
                       Try Again
@@ -95,6 +99,11 @@ export function UpcomingEventsSection({
                     href={eventbriteOrgUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      trackEvent('upcoming_events_eventbrite_org_click', {
+                        target: eventbriteOrgUrl,
+                      })
+                    }
                     className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-[var(--color-text)] border border-[var(--color-border)] font-medium hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
                   >
                     View Events on Eventbrite
@@ -117,6 +126,7 @@ export function UpcomingEventsSection({
                 <p className="text-[var(--color-text-muted)] mb-6">
                   <a
                     href="#newsletter-signup"
+                    onClick={() => trackEvent('upcoming_events_newsletter_click')}
                     className="font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)] transition-colors"
                   >
                     Sign Up to Our Newsletter
@@ -165,9 +175,23 @@ export function UpcomingEventsSection({
                         {event.location}
                       </a>
                     </div>
-                    {event.description && (
-                      <p className="mt-3 text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
-                    )}
+                    <div className="mt-3 space-y-2">
+                      {event.description && (
+                        <p className="text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
+                      )}
+                      <Link
+                        to={`/talks/${event.id}`}
+                        onClick={() =>
+                          trackEvent('upcoming_event_talk_details_click', {
+                            event_id: event.id,
+                            event_title: event.title,
+                          })
+                        }
+                        className="inline-flex items-center text-sm font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)] hover:underline transition-colors"
+                      >
+                        learn more &gt;&gt;
+                      </Link>
+                    </div>
 
                     {event.talks.length > 0 && (
                       <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -207,6 +231,13 @@ export function UpcomingEventsSection({
                           href={ticketUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() =>
+                            trackEvent('upcoming_event_ticket_click', {
+                              event_id: event.id,
+                              event_title: event.title,
+                              target: ticketUrl,
+                            })
+                          }
                           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-light)]"
                         >
                           <svg className="w-[1.3rem] h-[1.3rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -237,10 +268,11 @@ export function UpcomingEventsSection({
         {showArchiveLink && !loading && !error && (
           <div className="mt-6 text-center">
             <Link
-              to="/previous-talks"
+              to="/events"
+              onClick={() => trackEvent('upcoming_events_archive_click', { target: '/events' })}
               className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline"
             >
-              See old events
+              See all talks
             </Link>
           </div>
         )}

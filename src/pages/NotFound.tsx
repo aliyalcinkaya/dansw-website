@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom';
+import { trackEvent } from '../services/analytics';
 
 export function NotFound() {
+  const trackNotFoundLinkClick = (target: string) => {
+    trackEvent('not_found_link_click', {
+      target,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
@@ -12,6 +19,7 @@ export function NotFound() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/"
+            onClick={() => trackNotFoundLinkClick('/')}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Go Home
@@ -21,6 +29,7 @@ export function NotFound() {
           </Link>
           <Link
             to="/events"
+            onClick={() => trackNotFoundLinkClick('/events')}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text)] font-semibold hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
           >
             View Events

@@ -2,6 +2,7 @@ import { parseLinkedInPostInputs } from './linkedin';
 import { getSupabaseClient } from './supabase';
 
 const DEFAULT_SITE_SETTINGS_TABLE = 'site_settings';
+const DEFAULT_JOB_BOARD_ADMINS_TABLE = 'job_board_admins';
 const LINKEDIN_POSTS_KEY = 'home_linkedin_posts';
 const LOCAL_SETTINGS_STORAGE_KEY = 'daws_site_settings_v1';
 const MAX_LINKEDIN_POST_URLS = 6;
@@ -29,6 +30,11 @@ export interface SiteAdminAccess {
   canManage: boolean;
 }
 
+export interface AdminDirectoryUser {
+  email: string;
+  createdAt: string;
+}
+
 interface CachedAdminAccessResult {
   ok: boolean;
   data: SiteAdminAccess;
@@ -41,6 +47,10 @@ let adminAccessAuthListenerInitialized = false;
 
 function getSiteSettingsTableName() {
   return import.meta.env.VITE_SUPABASE_SITE_SETTINGS_TABLE?.trim() || DEFAULT_SITE_SETTINGS_TABLE;
+}
+
+function getJobBoardAdminsTableName() {
+  return import.meta.env.VITE_SUPABASE_JOB_BOARD_ADMINS_TABLE?.trim() || DEFAULT_JOB_BOARD_ADMINS_TABLE;
 }
 
 function canUseStorage() {
@@ -419,6 +429,147 @@ export async function saveLinkedInPostUrls(
       message: formatServiceError(error, 'Unable to save LinkedIn post settings.'),
     };
   }
+}
+
+export async function fetchAdminDirectoryUsers(): Promise<ServiceResult<AdminDirectoryUser[]>> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      ok: false,
+      data: [],
+      message: 'Supabase is not configured in this environment.',
+    };
+  }
+
+  const access = await fetchSiteAdminAccess();
+  if (!access.data.canManage) {
+    return {
+      ok: false,
+      data: [],
+      message: 'Admin sign-in is required to view the admin directory.',
+    };
+  }
+
+  try {
+    const { data, error } = await client
+      .from(getJobBoardAdminsTableName())
+      .select('email,created_at')
+      .order('email', { ascending: true });
+
+    if (error) {
+      const isPermissionError = (error.code ?? '') === '42501';
+      return {
+        ok: false,
+        data: [],
+        message: isPermissionError
+          ? 'Admin directory policy is not configured. Run supabase/admin_user_manager.sql in Supabase SQL Editor.'
+          : formatServiceError(error, 'Unable to load admin users.'),
+      };
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+    return {
+      ok: true,
+      data: rows.map((row) => ({
+        email: String((row as { email?: unknown }).email ?? ''),
+        createdAt: String((row as { created_at?: unknown }).created_at ?? ''),
+      })),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      data: [],
+      message: formatServiceError(error, 'Unable to load admin users.'),
+    };
+  }
+}
+
+export async function inviteAdminUser(
+  email: string,
+  redirectPath = '/admin'
+): Promise<ServiceResult<null>> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      ok: false,
+      data: null,
+      message: 'Supabase auth is not configured in this environment.',
+    };
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!isValidEmail(normalizedEmail)) {
+    return {
+      ok: false,
+      data: null,
+      message: 'Enter a valid email address.',
+    };
+  }
+
+  const access = await fetchSiteAdminAccess();
+  if (!access.data.canManage) {
+    return {
+      ok: false,
+      data: null,
+      message: 'Admin sign-in is required to invite users.',
+    };
+  }
+
+  const existingCheck = await client.rpc('is_job_admin_email', {
+    candidate_email: normalizedEmail,
+  });
+
+  if (existingCheck.error) {
+    return {
+      ok: false,
+      data: null,
+      message: formatServiceError(existingCheck.error, 'Unable to verify admin directory access.'),
+    };
+  }
+
+  let wasAlreadyAdmin = Boolean(existingCheck.data);
+
+  if (!wasAlreadyAdmin) {
+    const { error: insertError } = await client
+      .from(getJobBoardAdminsTableName())
+      .insert({ email: normalizedEmail });
+
+    if (insertError) {
+      const isPermissionError = (insertError.code ?? '') === '42501';
+      return {
+        ok: false,
+        data: null,
+        message: isPermissionError
+          ? 'Admin directory policy is not configured. Run supabase/admin_user_manager.sql in Supabase SQL Editor.'
+          : formatServiceError(insertError, 'Unable to invite admin user.'),
+      };
+    }
+
+    wasAlreadyAdmin = false;
+  }
+
+  const magicLinkResult = await sendAdminMagicLink(normalizedEmail, redirectPath);
+  if (!magicLinkResult.ok) {
+    return {
+      ok: false,
+      data: null,
+      message:
+        magicLinkResult.message ??
+        (wasAlreadyAdmin
+          ? 'User is already an admin, but magic link could not be sent.'
+          : 'User was added as admin, but magic link could not be sent.'),
+    };
+  }
+
+  clearCachedSiteAdminAccess();
+
+  return {
+    ok: true,
+    data: null,
+    message: wasAlreadyAdmin
+      ? `${normalizedEmail} is already an admin. A new magic link was sent.`
+      : `Invited ${normalizedEmail}. A magic link has been sent.`,
+  };
 }
 
 export async function sendAdminMagicLink(

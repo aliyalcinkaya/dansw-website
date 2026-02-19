@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom';
+import { trackEvent } from '../services/analytics';
 
 export function PrivacyPolicy() {
   const updatedAt = 'February 17, 2026';
+  const trackPrivacyLinkClick = (linkId: string, target: string) => {
+    trackEvent('privacy_policy_link_click', {
+      link_id: linkId,
+      target,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
@@ -9,6 +16,7 @@ export function PrivacyPolicy() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 md:py-20">
           <Link
             to="/"
+            onClick={() => trackPrivacyLinkClick('back_to_home', '/')}
             className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-6"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +71,11 @@ export function PrivacyPolicy() {
               <h2 className="text-2xl text-[var(--color-primary)] mb-3">Contact</h2>
               <p className="text-[var(--color-text-muted)] leading-relaxed">
                 For privacy questions or requests, email{' '}
-                <a href="mailto:hello@dawsydney.org.au" className="text-[var(--color-accent)] hover:underline">
+                <a
+                  href="mailto:hello@dawsydney.org.au"
+                  onClick={() => trackPrivacyLinkClick('privacy_contact_email', 'mailto:hello@dawsydney.org.au')}
+                  className="text-[var(--color-accent)] hover:underline"
+                >
                   hello@dawsydney.org.au
                 </a>
                 .

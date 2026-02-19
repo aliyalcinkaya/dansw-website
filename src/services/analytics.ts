@@ -1,80 +1,89 @@
-const MIXPANEL_API_ENDPOINT = 'https://api.mixpanel.com/track';
-const MIXPANEL_DISTINCT_ID_STORAGE_KEY = 'daws_mixpanel_distinct_id';
+type AnalyticsPrimitive = string | number | boolean | null;
+type AnalyticsParams = Record<string, AnalyticsPrimitive | undefined>;
+const ANALYTICS_ANON_ID_KEY = 'daws_analytics_anonymous_id';
 
-function getMixpanelToken() {
-  return import.meta.env.VITE_MIXPANEL_TOKEN?.trim() ?? '';
-}
-
-function getStoredDistinctId() {
-  if (typeof window === 'undefined') return '';
-
-  try {
-    return window.localStorage.getItem(MIXPANEL_DISTINCT_ID_STORAGE_KEY) ?? '';
-  } catch {
-    return '';
+declare global {
+  interface Window {
+    dataLayer: Array<Record<string, unknown>>;
   }
 }
 
-function storeDistinctId(value: string) {
-  if (typeof window === 'undefined' || !value) return;
-
-  try {
-    window.localStorage.setItem(MIXPANEL_DISTINCT_ID_STORAGE_KEY, value);
-  } catch {
-    // Ignore storage errors in private mode or restricted environments.
+function getDataLayer(): Array<Record<string, unknown>> | null {
+  if (typeof window === 'undefined') {
+    return null;
   }
+
+  if (!Array.isArray(window.dataLayer)) {
+    window.dataLayer = [];
+  }
+
+  return window.dataLayer;
 }
 
-export function getAnalyticsAnonymousId() {
-  const fromStorage = getStoredDistinctId();
-  if (fromStorage) return fromStorage;
+function sanitizeParams(params: AnalyticsParams | undefined): Record<string, AnalyticsPrimitive> {
+  if (!params) {
+    return {};
+  }
 
-  const generated =
+  return Object.entries(params).reduce<Record<string, AnalyticsPrimitive>>((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+}
+
+function normalizeEventName(input: string): string {
+  const normalized = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return normalized || 'custom_event';
+}
+
+export function trackEvent(eventName: string, params?: AnalyticsParams): void {
+  const dataLayer = getDataLayer();
+  if (!dataLayer) {
+    return;
+  }
+
+  dataLayer.push({
+    event: eventName,
+    ...sanitizeParams(params),
+  });
+}
+
+export function trackPageView(path: string): void {
+  trackEvent('page_view', {
+    page_path: path,
+    page_title: typeof document !== 'undefined' ? document.title : undefined,
+  });
+}
+
+export function getAnalyticsAnonymousId(): string {
+  if (typeof window === 'undefined') {
+    return 'server';
+  }
+
+  const existingValue = window.localStorage.getItem(ANALYTICS_ANON_ID_KEY);
+  if (existingValue) {
+    return existingValue;
+  }
+
+  const generatedValue =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
-      : `anon_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-  storeDistinctId(generated);
-  return generated;
+  window.localStorage.setItem(ANALYTICS_ANON_ID_KEY, generatedValue);
+  return generatedValue;
 }
 
-function cleanEventProperties(properties: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(properties).filter(([, value]) => value !== undefined && value !== null && value !== '')
-  );
-}
-
-export async function trackAnalyticsEvent(event: string, properties: Record<string, unknown> = {}) {
-  const token = getMixpanelToken();
-  if (!token) return;
-
-  const distinctId = getAnalyticsAnonymousId();
-  const cleanedProperties = cleanEventProperties(properties);
-  const email = typeof cleanedProperties.email === 'string' ? cleanedProperties.email : undefined;
-
-  try {
-    await fetch(MIXPANEL_API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify([
-        {
-          event,
-          properties: {
-            token,
-            distinct_id: email ?? distinctId,
-            $device_id: distinctId,
-            ...(email ? { $user_id: email } : {}),
-            $insert_id: `${event}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-            ...cleanedProperties,
-          },
-        },
-      ]),
-    });
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error('Analytics tracking failed', error);
-    }
-  }
+export async function trackAnalyticsEvent(eventLabel: string, params?: AnalyticsParams): Promise<void> {
+  trackEvent(normalizeEventName(eventLabel), {
+    event_label: eventLabel,
+    ...params,
+  });
 }

@@ -471,3 +471,98 @@ with check (public.is_job_admin());
 revoke all on public.site_settings from anon, authenticated;
 grant select on public.site_settings to anon, authenticated;
 grant insert, update, delete on public.site_settings to authenticated;
+
+create table if not exists public.form_email_routing (
+  form_kind text primary key,
+  form_label text not null,
+  to_emails text[] not null default '{}'::text[],
+  cc_emails text[] not null default '{}'::text[],
+  enabled boolean not null default true,
+  updated_by_email text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.form_email_routing
+  add column if not exists form_label text not null default '',
+  add column if not exists to_emails text[] not null default '{}'::text[],
+  add column if not exists cc_emails text[] not null default '{}'::text[],
+  add column if not exists enabled boolean not null default true,
+  add column if not exists updated_by_email text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+alter table public.form_email_routing
+  drop constraint if exists form_email_routing_kind_check;
+
+alter table public.form_email_routing
+  add constraint form_email_routing_kind_check check (
+    form_kind in ('general', 'speaker', 'member', 'sponsor', 'job')
+  );
+
+create or replace function public.set_form_email_routing_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists form_email_routing_set_updated_at on public.form_email_routing;
+create trigger form_email_routing_set_updated_at
+before update on public.form_email_routing
+for each row execute function public.set_form_email_routing_updated_at();
+
+alter table public.form_email_routing enable row level security;
+
+drop policy if exists "site_admins_can_manage_form_email_routing" on public.form_email_routing;
+create policy "site_admins_can_manage_form_email_routing"
+on public.form_email_routing
+for all
+to authenticated
+using (public.is_job_admin())
+with check (public.is_job_admin());
+
+revoke all on public.form_email_routing from anon, authenticated;
+grant select, insert, update, delete on public.form_email_routing to authenticated;
+
+insert into public.form_email_routing (form_kind, form_label, to_emails, cc_emails, enabled)
+values
+  (
+    'general',
+    'General enquiries',
+    array['simon@simonrumble.com', 'kirsten@inmarketingwetrust.com.au']::text[],
+    array['commitee@wawsydney.com']::text[],
+    true
+  ),
+  (
+    'speaker',
+    'Speaker requests',
+    array['minhanh411@gmail.com', 'wendynguyen272@gmail.com']::text[],
+    array['commitee@wawsydney.com']::text[],
+    true
+  ),
+  (
+    'member',
+    'Member form',
+    array['thanhchu0702@gmail.com']::text[],
+    array['commitee@wawsydney.com']::text[],
+    true
+  ),
+  (
+    'sponsor',
+    'Sponsor form',
+    array['yalcin@growthanalyticsmarketing.com']::text[],
+    array['commitee@wawsydney.com']::text[],
+    true
+  ),
+  (
+    'job',
+    'Job form',
+    array['yalcin@growthanalyticsmarketing.com']::text[],
+    array['commitee@wawsydney.com']::text[],
+    true
+  )
+on conflict (form_kind) do nothing;

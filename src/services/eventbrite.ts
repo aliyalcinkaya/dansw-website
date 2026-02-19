@@ -5,7 +5,7 @@ const EVENTBRITE_FUNCTION_NAME = import.meta.env.VITE_SUPABASE_EVENTBRITE_FUNCTI
 const ORGANIZATION_ID = import.meta.env.VITE_EVENTBRITE_ORGANIZATION_ID?.trim() || '';
 const ENABLE_EVENTBRITE_LIVE_REFRESH = import.meta.env.VITE_ENABLE_EVENTBRITE_LIVE_REFRESH === 'true';
 const COMMUNITY_EVENTS_TABLE = 'community_events';
-const EVENTS_CACHE_KEY = 'daws_events_cache_v2';
+const EVENTS_CACHE_KEY = 'daws_events_cache_v3';
 const EVENTS_CACHE_TTL_MS = 1000 * 60 * 10; // 10 minutes
 
 interface CachedEventsPayload {
@@ -327,6 +327,20 @@ function withCurrentUpcomingStatus(events: DisplayEvent[]): DisplayEvent[] {
   });
 }
 
+function getFreshCachedEventsPayload(): CachedEventsPayload | null {
+  if (eventsMemoryCache && isCacheFresh(eventsMemoryCache.cachedAt)) {
+    return eventsMemoryCache;
+  }
+
+  const storedCache = readEventsFromStorage();
+  if (storedCache) {
+    eventsMemoryCache = storedCache;
+    return storedCache;
+  }
+
+  return null;
+}
+
 function mergeEventSources(communityEvents: DisplayEvent[], eventbriteEvents: DisplayEvent[]): DisplayEvent[] {
   if (communityEvents.length === 0) {
     return eventbriteEvents;
@@ -348,6 +362,51 @@ function mergeEventSources(communityEvents: DisplayEvent[], eventbriteEvents: Di
   });
 
   return [...communityEvents, ...unmatchedEventbriteEvents];
+}
+
+function applyEventbriteStatsToCommunityEvents(
+  communityEvents: DisplayEvent[],
+  eventbriteEvents: DisplayEvent[]
+): DisplayEvent[] {
+  if (communityEvents.length === 0 || eventbriteEvents.length === 0) {
+    return communityEvents;
+  }
+
+  const eventbriteById = new Map(eventbriteEvents.map((event) => [event.id, event]));
+
+  return communityEvents.map((communityEvent) => {
+    const linkedEventbriteId = communityEvent.eventbriteEventId;
+    if (!linkedEventbriteId) {
+      return communityEvent;
+    }
+
+    const matchingEventbriteEvent = eventbriteById.get(linkedEventbriteId);
+    if (!matchingEventbriteEvent) {
+      return communityEvent;
+    }
+
+    const registrationCount = matchingEventbriteEvent.registrationCount ?? communityEvent.registrationCount;
+    const seatCapacity = matchingEventbriteEvent.seatCapacity ?? communityEvent.seatCapacity;
+    const seatsRemaining =
+      matchingEventbriteEvent.seatsRemaining ??
+      (seatCapacity !== null && registrationCount !== null
+        ? Math.max(0, seatCapacity - registrationCount)
+        : communityEvent.seatsRemaining);
+
+    return {
+      ...communityEvent,
+      url: communityEvent.url !== '#' ? communityEvent.url : matchingEventbriteEvent.url,
+      eventbriteUrl: communityEvent.eventbriteUrl ?? matchingEventbriteEvent.eventbriteUrl,
+      registrationCount,
+      seatCapacity,
+      seatsRemaining,
+      isLimitedSeats: isLimitedSeatsStatus({
+        isUpcoming: communityEvent.isUpcoming,
+        seatCapacity,
+        seatsRemaining,
+      }),
+    };
+  });
 }
 
 function getFunctionConfig() {
@@ -471,30 +530,31 @@ async function fetchEventbriteEventsFromFunction(): Promise<DisplayEvent[]> {
 
 async function fetchAllEventsInternal(): Promise<DisplayEvent[]> {
   const communityEvents = await fetchCommunityEventsFromSupabase();
-  if (!ENABLE_EVENTBRITE_LIVE_REFRESH) {
-    return sortByStartDesc(communityEvents);
-  }
-
+  let eventbriteEvents: DisplayEvent[] = [];
   try {
-    const eventbriteEvents = await fetchEventbriteEventsFromFunction();
-    return sortByStartDesc(mergeEventSources(communityEvents, eventbriteEvents));
+    eventbriteEvents = await fetchEventbriteEventsFromFunction();
   } catch (error) {
-    console.warn('Eventbrite live refresh failed, using backend community events only.', error);
+    console.warn('Eventbrite refresh failed, using backend community events only.', error);
   }
 
-  return sortByStartDesc(communityEvents);
+  const enrichedCommunityEvents = applyEventbriteStatsToCommunityEvents(communityEvents, eventbriteEvents);
+
+  if (!ENABLE_EVENTBRITE_LIVE_REFRESH) {
+    return sortByStartDesc(enrichedCommunityEvents);
+  }
+
+  if (eventbriteEvents.length > 0) {
+    return sortByStartDesc(mergeEventSources(enrichedCommunityEvents, eventbriteEvents));
+  }
+
+  return sortByStartDesc(enrichedCommunityEvents);
 }
 
 async function getAllEventsCached(forceRefresh = false): Promise<DisplayEvent[]> {
   if (!forceRefresh) {
-    if (eventsMemoryCache && isCacheFresh(eventsMemoryCache.cachedAt)) {
-      return withCurrentUpcomingStatus(eventsMemoryCache.events);
-    }
-
-    const storedCache = readEventsFromStorage();
-    if (storedCache) {
-      eventsMemoryCache = storedCache;
-      return withCurrentUpcomingStatus(storedCache.events);
+    const cachedPayload = getFreshCachedEventsPayload();
+    if (cachedPayload) {
+      return withCurrentUpcomingStatus(cachedPayload.events);
     }
 
     if (eventsRequestPromise) {
@@ -524,6 +584,23 @@ async function getAllEventsCached(forceRefresh = false): Promise<DisplayEvent[]>
     console.error('Failed to fetch events:', error);
     throw error;
   }
+}
+
+export function getCachedAllEventsSnapshot(): DisplayEvent[] {
+  const cachedPayload = getFreshCachedEventsPayload();
+  if (!cachedPayload) {
+    return [];
+  }
+
+  return sortByStartDesc(withCurrentUpcomingStatus(cachedPayload.events));
+}
+
+export function getCachedUpcomingEventsSnapshot(): DisplayEvent[] {
+  return sortByStartAsc(getCachedAllEventsSnapshot().filter((event) => event.isUpcoming));
+}
+
+export function getCachedPastEventsSnapshot(): DisplayEvent[] {
+  return sortByStartDesc(getCachedAllEventsSnapshot().filter((event) => !event.isUpcoming));
 }
 
 export async function fetchUpcomingEvents(forceRefresh = false): Promise<DisplayEvent[]> {

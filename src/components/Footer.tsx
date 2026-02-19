@@ -1,6 +1,21 @@
 import { Link } from 'react-router-dom';
+import { trackEvent } from '../services/analytics';
 
 export function Footer() {
+  const trackFooterLink = (label: string, target: string) => {
+    trackEvent('footer_link_click', {
+      link_label: label,
+      link_target: target,
+    });
+  };
+
+  const trackFooterSocial = (platform: string, target: string) => {
+    trackEvent('footer_social_click', {
+      platform,
+      link_target: target,
+    });
+  };
+
   return (
     <footer className="bg-[var(--color-primary)] text-white mt-auto">
       {/* Main footer content */}
@@ -32,27 +47,56 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/jobs" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/jobs"
+                  onClick={() => trackFooterLink('Jobs', '/jobs')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Jobs
                 </Link>
               </li>
               <li>
-                <Link to="/events" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/events"
+                  onClick={() => trackFooterLink('Events', '/events')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Events
                 </Link>
               </li>
               <li>
-                <Link to="/become-a-speaker" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/become-a-speaker"
+                  onClick={() => trackFooterLink('Become a Speaker', '/become-a-speaker')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Become a Speaker
                 </Link>
               </li>
               <li>
-                <Link to="/become-a-sponsor" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/contact"
+                  onClick={() => trackFooterLink('Contact', '/contact')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/become-a-sponsor"
+                  onClick={() => trackFooterLink('Become a Sponsor', '/become-a-sponsor')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Become a Sponsor
                 </Link>
               </li>
               <li>
-                <Link to="/join" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/join"
+                  onClick={() => trackFooterLink('Volunteer', '/join')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Volunteer
                 </Link>
               </li>
@@ -66,18 +110,39 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/about" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/about"
+                  onClick={() => trackFooterLink('About Us', '/about')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/code-of-conduct" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/code-of-conduct"
+                  onClick={() => trackFooterLink('Code of Conduct', '/code-of-conduct')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Code of Conduct
                 </Link>
               </li>
               <li>
-                <Link to="/privacy-policy" className="text-white/60 hover:text-white text-sm transition-colors">
+                <Link
+                  to="/privacy-policy"
+                  onClick={() => trackFooterLink('Privacy Policy', '/privacy-policy')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
                   Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/admin-login"
+                  onClick={() => trackFooterLink('Admin Login', '/admin-login')}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
+                  Admin Login
                 </Link>
               </li>
             </ul>
@@ -98,6 +163,12 @@ export function Footer() {
                 href="https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackFooterSocial(
+                    'linkedin',
+                    'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all'
+                  )
+                }
                 className="text-white/50 hover:text-white transition-colors"
                 aria-label="LinkedIn"
               >
@@ -109,6 +180,12 @@ export function Footer() {
                 href="https://www.youtube.com/channel/UC4W56NwdqJ6tFmW-JWwLrNg/"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackFooterSocial(
+                    'youtube',
+                    'https://www.youtube.com/channel/UC4W56NwdqJ6tFmW-JWwLrNg/'
+                  )
+                }
                 className="text-white/50 hover:text-white transition-colors"
                 aria-label="YouTube"
               >
@@ -120,6 +197,7 @@ export function Footer() {
                 href="https://x.com/DAW_Syd"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackFooterSocial('x', 'https://x.com/DAW_Syd')}
                 className="text-white/50 hover:text-white transition-colors"
                 aria-label="X (Twitter)"
               >
@@ -131,6 +209,12 @@ export function Footer() {
                 href="https://www.meetup.com/data-and-analytics-wednesday-sydney/"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackFooterSocial(
+                    'meetup',
+                    'https://www.meetup.com/data-and-analytics-wednesday-sydney/'
+                  )
+                }
                 className="text-white/50 hover:text-white transition-colors"
                 aria-label="Meetup"
               >

@@ -1,4 +1,5 @@
 import { trackAnalyticsEvent } from './analytics';
+import { forwardFormByEmail } from './formForwarding';
 import { getSupabaseClient } from './supabase';
 import { SAMPLE_PUBLISHED_JOBS } from './sampleJobs';
 import type {
@@ -407,6 +408,59 @@ async function getCurrentUserIdentity() {
 
 function createDraftRedirectUrl(draftId: string) {
   return buildAbsoluteAppUrl(`/jobs/submit?draft=${encodeURIComponent(draftId)}`);
+}
+
+async function forwardJobSubmissionForReview(job: JobPost) {
+  const pagePath =
+    typeof window === 'undefined'
+      ? '/jobs/submit'
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+  const result = await forwardFormByEmail('job', {
+    type: 'job',
+    source: 'jobs-submit',
+    name: job.contactName ?? null,
+    email: job.postedByEmail,
+    company: job.companyName,
+    message: `Job submitted for review: ${job.title}`,
+    page_path: pagePath,
+    received_at: new Date().toISOString(),
+    payload: {
+      job_id: job.id,
+      title: job.title,
+      company_name: job.companyName,
+      package_type: job.packageType,
+      payment_status: job.paymentStatus,
+      posted_by_email: job.postedByEmail,
+      application_mode: job.applicationMode,
+      location_mode: job.locationMode,
+      location_text: job.locationText,
+    },
+  });
+
+  if (!result.ok) {
+    if (import.meta.env.DEV) {
+      console.error(`Job forwarding failed: ${result.message ?? 'unknown error'}`);
+    }
+
+    void trackAnalyticsEvent('Job submit forward failed', {
+      form_type: 'job_post',
+      source: 'jobs-submit',
+      job_id: job.id,
+      company_name: job.companyName,
+      failure_reason: result.message ?? 'forwarding_failed',
+    });
+    return;
+  }
+
+  if (!result.skipped) {
+    void trackAnalyticsEvent('Job submitted forwarded', {
+      form_type: 'job_post',
+      source: 'jobs-submit',
+      job_id: job.id,
+      company_name: job.companyName,
+    });
+  }
 }
 
 async function createAdminNotification(input: CreateAdminNotificationInput) {
@@ -828,6 +882,8 @@ export async function markJobPaidAndSubmitForReview(
       },
     });
 
+    void forwardJobSubmissionForReview(mapped);
+
     return { ok: true, data: mapped };
   } catch (error) {
     return {
@@ -884,6 +940,8 @@ export async function submitJobForReviewWithoutPayment(
         payment_status: 'waived',
       },
     });
+
+    void forwardJobSubmissionForReview(mapped);
 
     void trackAnalyticsEvent('Job submitted for review (payments disabled)', {
       form_type: 'job_post',

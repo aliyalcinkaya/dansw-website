@@ -11,6 +11,7 @@ A modern, responsive website for Sydney's premier data and analytics community.
 - **Become a Member**: Membership application form with conditional fields
 - **Become a Speaker**: Speaker proposal submission form
 - **Become a Sponsor**: Sponsorship tiers and inquiry form
+- **Contact**: General enquiries form and contact page
 - **About**: Information about Digital Analytics NSW Inc.
 - **Code of Conduct**: Community guidelines
 - **Get Involved**: Volunteer opportunities
@@ -18,6 +19,7 @@ A modern, responsive website for Sydney's premier data and analytics community.
 - **Accessibility**: Skip navigation, semantic HTML, ARIA labels
 - **SEO**: Meta tags, Open Graph, Twitter cards
 - **Performance**: Lazy-loaded routes, optimized bundle
+- **Form Forwarding**: Admin-configurable To/CC email routing for website forms
 
 ## Tech Stack
 
@@ -48,10 +50,13 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 VITE_SUPABASE_FORMS_TABLE=form_submissions
 VITE_SUPABASE_NEWSLETTER_TABLE=newsletter_subscriptions
 VITE_SUPABASE_NEWSLETTER_MAILCHIMP_FUNCTION=newsletter-mailchimp-sync           # optional
+VITE_SUPABASE_FORM_FORWARDER_FUNCTION=form-forwarder                              # optional (default: form-forwarder)
+VITE_SUPABASE_FORM_FORWARDER_FUNCTION_URL=https://your-project-ref.supabase.co/functions/v1/form-forwarder # optional override
 VITE_SUPABASE_JOBS_TABLE=job_posts
 VITE_SUPABASE_JOB_APPLICATIONS_TABLE=job_applications
 VITE_SUPABASE_JOB_ADMIN_NOTIFICATIONS_TABLE=job_admin_notifications
 VITE_SUPABASE_SITE_SETTINGS_TABLE=site_settings
+VITE_SUPABASE_FORM_ROUTING_TABLE=form_email_routing
 VITE_STRIPE_CHECKOUT_ENDPOINT=https://your-api.example.com/create-job-checkout # optional
 VITE_STRIPE_STANDARD_PAYMENT_LINK=https://buy.stripe.com/your_standard_link     # optional fallback
 VITE_STRIPE_AMPLIFIED_PAYMENT_LINK=https://buy.stripe.com/your_amplified_link   # optional fallback
@@ -147,7 +152,7 @@ VITE_LINKEDIN_POST_URLS=https://www.linkedin.com/feed/update/urn:li:activity:123
 ### Supabase Form Backend
 
 Website forms submit to Supabase using two tables:
-- `form_submissions`: join/speaker/sponsor forms
+- `form_submissions`: contact/member/speaker/sponsor forms
 - `newsletter_subscriptions`: footer newsletter form
 
 1. Create or open a Supabase project.
@@ -203,6 +208,46 @@ The function code lives at:
 
 `supabase/functions/newsletter-mailchimp-sync/index.ts`
 
+### Form Email Forwarding (Resend)
+
+Website forms and job submissions can forward email notifications based on admin-managed routing rules:
+- Routing settings table: `form_email_routing` (managed from `/admin/form-routing`)
+- Default routing seeded in `supabase/jobs.sql`
+
+1. In Supabase SQL Editor, run `supabase/jobs.sql` (includes `form_email_routing`).
+2. Add frontend env vars:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+VITE_SUPABASE_FORM_FORWARDER_FUNCTION=form-forwarder
+VITE_SUPABASE_FORM_ROUTING_TABLE=form_email_routing
+```
+
+3. Set Edge Function secrets:
+
+```bash
+supabase secrets set \
+  RESEND_API_KEY=your_resend_api_key \
+  FORM_FORWARDER_FROM_EMAIL="DAWS Website <forms@yourdomain.com>" \
+  FORM_FORWARDER_ALLOWED_ORIGIN=http://localhost:5173,https://www.dawsydney.org.au \
+  FORM_FORWARDER_DEFAULT_CC=commitee@wawsydney.com
+```
+
+4. Deploy function:
+
+```bash
+supabase functions deploy form-forwarder
+```
+
+The function code lives at:
+
+`supabase/functions/form-forwarder/index.ts`
+
+Notes:
+- Resend has a free tier and is suitable for low-volume use (for example less than 100 emails/month).
+- For public website forms, keep Edge Function JWT verification disabled for `form-forwarder`.
+
 ### Job Board Backend
 
 Job posting and easy-apply data is stored in Supabase:
@@ -210,6 +255,7 @@ Job posting and easy-apply data is stored in Supabase:
 - `job_applications`: Easy Apply submissions
 - `job_admin_notifications`: moderation and expiry notifications
 - `site_settings`: website content settings (for example homepage LinkedIn links)
+- `form_email_routing`: admin-managed To/CC recipients for form forwarding
 
 1. In Supabase SQL Editor, run `supabase/jobs.sql`.
 2. Add these env vars:
@@ -284,10 +330,12 @@ export default defineConfig({
 │   │   └── usePastEvents.ts        # Fetch past events
 │   ├── pages/
 │   │   ├── Home.tsx          # Landing page with events
+│   │   ├── Contact.tsx       # General enquiries contact form
 │   │   ├── Jobs.tsx          # Job board listing page
 │   │   ├── JobDetail.tsx     # Job detail page
 │   │   ├── JobSubmit.tsx     # Job post submission + checkout flow
 │   │   ├── AdminJobs.tsx     # Admin moderation dashboard
+│   │   ├── AdminFormRouting.tsx # Admin form forwarding recipients
 │   │   ├── PreviousTalks.tsx # Event archive with search
 │   │   ├── BecomeMember.tsx  # Membership + volunteer form
 │   │   ├── BecomeSpeaker.tsx # Speaker proposal form
@@ -299,6 +347,7 @@ export default defineConfig({
 │   ├── services/
 │   │   ├── eventbrite.ts     # Eventbrite API integration
 │   │   ├── forms.ts          # Supabase form submission client
+│   │   ├── formForwarding.ts # Edge function email forwarding client
 │   │   ├── jobs.ts           # Job board and application services
 │   │   └── analytics.ts      # Optional Mixpanel form analytics
 │   ├── types/

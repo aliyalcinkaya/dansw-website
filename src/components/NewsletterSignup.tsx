@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { submitNewsletterSubscription } from '../services/forms';
+import { trackEvent } from '../services/analytics';
 
 export function NewsletterSignup() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -14,6 +15,9 @@ export function NewsletterSignup() {
     setIsSubmitting(true);
     setStatus('idle');
     setStatusMessage('');
+    trackEvent('newsletter_subscribe_submit', {
+      source: 'newsletter_section',
+    });
 
     try {
       const result = await submitNewsletterSubscription({
@@ -25,6 +29,10 @@ export function NewsletterSignup() {
       if (!result.ok) {
         setStatus('error');
         setStatusMessage(result.message ?? 'Unable to subscribe right now.');
+        trackEvent('newsletter_subscribe_error', {
+          source: 'newsletter_section',
+          message: result.message ?? 'Unable to subscribe right now.',
+        });
         return;
       }
 
@@ -32,9 +40,16 @@ export function NewsletterSignup() {
       setStatusMessage(result.message ?? 'Subscribed. You will receive updates on events and community news.');
       setNewsletterEmail('');
       setWebsite('');
+      trackEvent('newsletter_subscribe_success', {
+        source: 'newsletter_section',
+      });
     } catch {
       setStatus('error');
       setStatusMessage('Network error while subscribing. Please try again.');
+      trackEvent('newsletter_subscribe_error', {
+        source: 'newsletter_section',
+        message: 'Network error while subscribing. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +99,11 @@ export function NewsletterSignup() {
 
           <p className="mt-4 text-sm/6 text-[var(--color-text)]">
             We care about your privacy Read our{' '}
-            <Link to="/privacy-policy" className="whitespace-nowrap font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)]">
+            <Link
+              to="/privacy-policy"
+              onClick={() => trackEvent('newsletter_privacy_policy_click', { source: 'newsletter_section' })}
+              className="whitespace-nowrap font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)]"
+            >
               privacy policy
             </Link>
             .

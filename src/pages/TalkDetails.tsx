@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAllEvents } from '../hooks/useAllEvents';
 import { getGoogleMapsSearchUrl } from '../utils/maps';
+import { trackEvent } from '../services/analytics';
 
 export function TalkDetails() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -48,13 +49,17 @@ export function TalkDetails() {
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={refetch}
+              onClick={() => {
+                trackEvent('talk_details_retry_click');
+                refetch();
+              }}
               className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 font-semibold text-white transition-all hover:bg-[var(--color-accent-light)]"
             >
               Try Again
             </button>
             <Link
               to="/events"
+              onClick={() => trackEvent('talk_details_back_to_events_click', { context: 'error_state' })}
               className="inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] px-5 py-3 font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
             >
               Back to Events
@@ -75,6 +80,7 @@ export function TalkDetails() {
           </p>
           <Link
             to="/events"
+            onClick={() => trackEvent('talk_details_back_to_events_click', { context: 'not_found_state' })}
             className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 font-semibold text-white transition-all hover:bg-[var(--color-accent-light)]"
           >
             Browse All Events
@@ -102,6 +108,13 @@ export function TalkDetails() {
                 href={getGoogleMapsSearchUrl(talk.location)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent('talk_details_location_click', {
+                    event_id: talk.id,
+                    event_title: talk.title,
+                    location: talk.location,
+                  })
+                }
                 className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
               >
                 {talk.location}
@@ -172,6 +185,13 @@ export function TalkDetails() {
                                 href={eventTalk.speaker.linkedinUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() =>
+                                  trackEvent('talk_details_speaker_link_click', {
+                                    event_id: talk.id,
+                                    speaker_id: eventTalk.speaker?.id,
+                                    link_type: 'linkedin',
+                                  })
+                                }
                                 className="text-[var(--color-accent)] hover:underline"
                               >
                                 LinkedIn
@@ -182,6 +202,13 @@ export function TalkDetails() {
                                 href={eventTalk.speaker.websiteUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() =>
+                                  trackEvent('talk_details_speaker_link_click', {
+                                    event_id: talk.id,
+                                    speaker_id: eventTalk.speaker?.id,
+                                    link_type: 'website',
+                                  })
+                                }
                                 className="text-[var(--color-accent)] hover:underline"
                               >
                                 Website
@@ -214,34 +241,50 @@ export function TalkDetails() {
                   <span className="font-medium text-[var(--color-primary)]">{talk.time}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-muted)]">Seats Remaining</span>
+                  <span className="text-[var(--color-text-muted)]">{talk.isUpcoming ? 'Available Seats' : 'Attendees'}</span>
                   <span className="font-medium text-[var(--color-primary)]">
-                    {talk.seatsRemaining === null ? 'N/A' : talk.seatsRemaining}
+                    {talk.isUpcoming
+                      ? talk.seatsRemaining === null
+                        ? 'N/A'
+                        : talk.seatsRemaining
+                      : talk.registrationCount === null
+                        ? 'N/A'
+                        : talk.registrationCount}
                   </span>
                 </div>
               </div>
-              <div className="mt-5 flex flex-col gap-3">
-                {talk.eventbriteUrl ? (
-                  <a
-                    href={talk.eventbriteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-[var(--color-accent-light)]"
+              {talk.isUpcoming && (
+                <div className="mt-5 flex flex-col gap-3">
+                  {talk.eventbriteUrl ? (
+                    <a
+                      href={talk.eventbriteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() =>
+                        trackEvent('talk_details_eventbrite_click', {
+                          event_id: talk.id,
+                          event_title: talk.title,
+                          target: talk.eventbriteUrl,
+                        })
+                      }
+                      className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-[var(--color-accent-light)]"
+                    >
+                      Open on Eventbrite
+                    </a>
+                  ) : (
+                    <span className="inline-flex items-center justify-center rounded-xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-600">
+                      Eventbrite link coming soon
+                    </span>
+                  )}
+                  <Link
+                    to="/events"
+                    onClick={() => trackEvent('talk_details_back_to_events_click', { context: 'upcoming_sidebar' })}
+                    className="inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                   >
-                    Open on Eventbrite
-                  </a>
-                ) : (
-                  <span className="inline-flex items-center justify-center rounded-xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-600">
-                    Eventbrite link coming soon
-                  </span>
-                )}
-                <Link
-                  to="/events"
-                  className="inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-[var(--color-text)] transition-all hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                >
-                  Back to Events
-                </Link>
-              </div>
+                    Back to Events
+                  </Link>
+                </div>
+              )}
             </section>
 
             {relatedTalks.length > 0 && (
@@ -252,6 +295,13 @@ export function TalkDetails() {
                     <Link
                       key={event.id}
                       to={`/talks/${event.id}`}
+                      onClick={() =>
+                        trackEvent('talk_details_related_talk_click', {
+                          source_event_id: talk.id,
+                          target_event_id: event.id,
+                          target_event_title: event.title,
+                        })
+                      }
                       className="block rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 transition-all hover:border-[var(--color-accent)]"
                     >
                       <p className="line-clamp-2 text-sm font-medium text-[var(--color-primary)]">{event.title}</p>

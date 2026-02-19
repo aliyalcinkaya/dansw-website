@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { trackEvent } from '../services/analytics';
 
 const slackInviteUrl =
   'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
@@ -30,6 +31,13 @@ const committeeRoles = [
 ];
 
 export function About() {
+  const trackAboutLinkClick = (linkId: string, target: string) => {
+    trackEvent('about_link_click', {
+      link_id: linkId,
+      target,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
       <section className="border-b border-[var(--color-border)] bg-white">
@@ -148,6 +156,7 @@ export function About() {
               <div className="space-y-3 text-sm">
                 <a
                   href="mailto:commitee@wawsydney.com"
+                  onClick={() => trackAboutLinkClick('contact_email', 'mailto:commitee@wawsydney.com')}
                   className="flex items-center gap-3 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,6 +168,12 @@ export function About() {
                   href="https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackAboutLinkClick(
+                      'community_linkedin',
+                      'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all'
+                    )
+                  }
                   className="flex items-center gap-3 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
                 >
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -170,6 +185,7 @@ export function About() {
                   href={slackInviteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackAboutLinkClick('community_slack', slackInviteUrl)}
                   className="flex items-center gap-3 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)]"
                 >
                   <img src="/slack_logo.png" alt="" aria-hidden="true" className="h-5 w-5" />
@@ -188,6 +204,7 @@ export function About() {
                   href="/pdfs/model_constitution.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackAboutLinkClick('download_constitution', '/pdfs/model_constitution.pdf')}
                   className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)] transition-all hover:gap-3"
                 >
                   Download Constitution
@@ -195,7 +212,11 @@ export function About() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </a>
-                <Link to="/code-of-conduct" className="text-sm text-[var(--color-accent)] hover:underline">
+                <Link
+                  to="/code-of-conduct"
+                  onClick={() => trackAboutLinkClick('read_code_of_conduct', '/code-of-conduct')}
+                  className="text-sm text-[var(--color-accent)] hover:underline"
+                >
                   Read Code of Conduct
                 </Link>
               </div>
@@ -208,6 +229,7 @@ export function About() {
               </p>
               <Link
                 to="/join"
+                onClick={() => trackAboutLinkClick('view_volunteer_roles', '/join')}
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[var(--color-accent)] transition-colors hover:bg-white/90"
               >
                 View Volunteer Roles

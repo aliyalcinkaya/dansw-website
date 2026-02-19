@@ -1,4 +1,13 @@
+import { trackEvent } from '../services/analytics';
+
 export function CodeOfConduct() {
+  const trackCodeOfConductLinkClick = (linkId: string, target: string) => {
+    trackEvent('code_of_conduct_link_click', {
+      link_id: linkId,
+      target,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
       {/* Header */}
@@ -111,6 +120,7 @@ export function CodeOfConduct() {
                   </svg>
                   <a 
                     href="mailto:commitee@wawsydney.com" 
+                    onClick={() => trackCodeOfConductLinkClick('report_email', 'mailto:commitee@wawsydney.com')}
                     className="text-[var(--color-accent)] font-medium hover:underline"
                   >
                     commitee@wawsydney.com
@@ -168,6 +178,7 @@ export function CodeOfConduct() {
                     href="https://www.contributor-covenant.org/" 
                     target="_blank" 
                     rel="noopener noreferrer"
+                    onClick={() => trackCodeOfConductLinkClick('contributor_covenant', 'https://www.contributor-covenant.org/')}
                     className="text-[var(--color-accent)] hover:underline"
                   >
                     Contributor Covenant
@@ -177,6 +188,7 @@ export function CodeOfConduct() {
                     href="https://confcodeofconduct.com/" 
                     target="_blank" 
                     rel="noopener noreferrer"
+                    onClick={() => trackCodeOfConductLinkClick('conference_code_of_conduct', 'https://confcodeofconduct.com/')}
                     className="text-[var(--color-accent)] hover:underline"
                   >
                     Conference Code of Conduct
@@ -190,6 +202,5 @@ export function CodeOfConduct() {
     </div>
   );
 }
-
 
 

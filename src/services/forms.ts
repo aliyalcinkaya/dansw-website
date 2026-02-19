@@ -1,4 +1,5 @@
 import { getAnalyticsAnonymousId, trackAnalyticsEvent } from './analytics';
+import { forwardFormByEmail } from './formForwarding';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_PAYLOAD_SIZE = 10 * 1024; // 10 KB
@@ -9,7 +10,7 @@ export type SubmitResult = {
   message?: string;
 };
 
-type FormType = 'member' | 'speaker' | 'sponsor' | 'newsletter';
+type FormType = 'general' | 'member' | 'speaker' | 'sponsor' | 'newsletter';
 type Profession = 'student' | 'professional' | 'looking';
 
 interface BaseInput {
@@ -23,6 +24,13 @@ export interface MemberSubmissionInput extends BaseInput {
   profession: Profession;
   institution?: string;
   goals: string;
+}
+
+export interface GeneralInquirySubmissionInput extends BaseInput {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
 }
 
 export interface SpeakerSubmissionInput extends BaseInput {
@@ -177,6 +185,46 @@ function mapErrorMessage(status: number, responseBody: string, tableName: string
   return 'Unable to submit right now. Please try again.';
 }
 
+async function forwardStoredFormSubmission(record: NormalizedRecord): Promise<void> {
+  if (record.type === 'newsletter') {
+    return;
+  }
+
+  const result = await forwardFormByEmail(record.type, {
+    type: record.type,
+    source: record.source,
+    email: record.email,
+    name: record.name ?? null,
+    company: record.company ?? null,
+    message: record.message ?? null,
+    page_path: record.page_path,
+    received_at: record.received_at,
+    payload: record.payload,
+  });
+
+  if (!result.ok) {
+    if (import.meta.env.DEV) {
+      console.error(`Form forwarding failed for ${record.type}: ${result.message ?? 'unknown error'}`);
+    }
+
+    void trackAnalyticsEvent('Form forward failed', {
+      form_type: record.type,
+      source: record.source,
+      email: record.email,
+      failure_reason: result.message ?? 'forwarding_failed',
+    });
+    return;
+  }
+
+  if (!result.skipped) {
+    void trackAnalyticsEvent('Form forwarded', {
+      form_type: record.type,
+      source: record.source,
+      email: record.email,
+    });
+  }
+}
+
 async function postSubmission(
   record: NormalizedRecord,
   target: SubmissionTarget = 'forms'
@@ -258,6 +306,10 @@ async function postSubmission(
       source: record.source,
       email: record.email,
     });
+
+    if (target === 'forms') {
+      void forwardStoredFormSubmission(record);
+    }
 
     return { ok: true };
   } catch (error) {
@@ -366,6 +418,45 @@ function buildBaseRecord(input: BaseInput & { email: string }, type: FormType) {
     page_path: getPagePath(),
     received_at: new Date().toISOString(),
   };
+}
+
+export async function submitGeneralInquiry(input: GeneralInquirySubmissionInput): Promise<SubmitResult> {
+  const commonValidation = validateCommon('general', input);
+  if (!commonValidation.ok) return commonValidation;
+
+  const missingFields: string[] = [];
+  const name = toTrimmed(input.name);
+  const subject = toTrimmed(input.subject);
+  const message = toTrimmed(input.message);
+
+  if (!name) missingFields.push('name');
+  if (!subject) missingFields.push('subject');
+  if (!message) missingFields.push('message');
+
+  if (missingFields.length > 0) {
+    void trackAnalyticsEvent('Form submit failed', {
+      form_type: 'general',
+      source: input.source,
+      failure_reason: 'validation',
+      missing_fields: missingFields.join(','),
+    });
+
+    return {
+      ok: false,
+      message: buildMissingFieldsMessage(missingFields),
+    };
+  }
+
+  return postSubmission({
+    ...buildBaseRecord(input, 'general'),
+    newsletter: false,
+    name,
+    message,
+    payload: {
+      subject,
+      message,
+    },
+  });
 }
 
 export async function submitMemberApplication(input: MemberSubmissionInput): Promise<SubmitResult> {

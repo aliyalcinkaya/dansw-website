@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { submitMemberApplication } from '../services/forms';
+import { trackEvent } from '../services/analytics';
 
 type Profession = 'student' | 'professional' | 'looking' | '';
 
@@ -104,10 +105,18 @@ export function BecomeMember() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError('');
+    trackEvent('volunteer_application_submit', {
+      source: '/join',
+      profession: formData.profession || 'unknown',
+    });
 
     try {
       if (!formData.profession) {
         setSubmitError('Please select what best describes you.');
+        trackEvent('volunteer_application_error', {
+          source: '/join',
+          message: 'Profession not selected',
+        });
         return;
       }
 
@@ -123,12 +132,23 @@ export function BecomeMember() {
 
       if (!result.ok) {
         setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        trackEvent('volunteer_application_error', {
+          source: '/join',
+          message: result.message ?? 'Unable to submit right now. Please try again.',
+        });
         return;
       }
 
       setIsSubmitted(true);
+      trackEvent('volunteer_application_success', {
+        source: '/join',
+      });
     } catch {
       setSubmitError('Unable to submit right now. Please try again.');
+      trackEvent('volunteer_application_error', {
+        source: '/join',
+        message: 'Unexpected submit error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -175,6 +195,7 @@ export function BecomeMember() {
           </p>
           <Link
             to="/"
+            onClick={() => trackEvent('volunteer_application_return_home_click')}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Return Home
@@ -313,7 +334,10 @@ export function BecomeMember() {
                       <button
                         key={option.value}
                         type="button"
-                        onClick={() => setFormData({ ...formData, profession: option.value as Profession, institution: '' })}
+                        onClick={() => {
+                          setFormData({ ...formData, profession: option.value as Profession, institution: '' });
+                          trackEvent('volunteer_profession_select', { value: option.value });
+                        }}
                         className={`p-4 rounded-lg border text-center transition-all ${
                           formData.profession === option.value
                             ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5 ring-2 ring-[var(--color-accent)]'
@@ -334,7 +358,7 @@ export function BecomeMember() {
                 </div>
 
                 {formData.profession && (
-                  <div className="animate-fade-in-up">
+                  <div>
                     <label htmlFor="institution" className="block text-sm font-medium text-[var(--color-text)] mb-2">
                       {getInstitutionLabel()} {formData.profession !== 'looking' && '*'}
                     </label>
@@ -396,7 +420,11 @@ export function BecomeMember() {
 
                 <p className="text-xs text-[var(--color-text-muted)] text-center">
                   By submitting this form, you agree to our{' '}
-                  <a href="/code-of-conduct" className="text-[var(--color-accent)] hover:underline">
+                  <a
+                    href="/code-of-conduct"
+                    onClick={() => trackEvent('volunteer_code_of_conduct_click')}
+                    className="text-[var(--color-accent)] hover:underline"
+                  >
                     Code of Conduct
                   </a>.
                 </p>
@@ -416,12 +444,24 @@ export function BecomeMember() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   to="/become-a-speaker"
+                  onClick={() =>
+                    trackEvent('volunteer_page_cta_click', {
+                      cta_id: 'become_speaker',
+                      target: '/become-a-speaker',
+                    })
+                  }
                   className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
                 >
                   Become a Speaker
                 </Link>
                 <a
                   href="#volunteer-application"
+                  onClick={() =>
+                    trackEvent('volunteer_page_cta_click', {
+                      cta_id: 'jump_to_application',
+                      target: '#volunteer-application',
+                    })
+                  }
                   className="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-white/40 text-white font-semibold hover:bg-white/10 transition-all"
                 >
                   Apply to Volunteer

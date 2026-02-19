@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { submitSpeakerApplication } from '../services/forms';
+import { trackEvent } from '../services/analytics';
 
 interface FormData {
   name: string;
@@ -60,6 +61,10 @@ export function BecomeSpeaker() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError('');
+    trackEvent('speaker_application_submit', {
+      source: '/become-a-speaker',
+      topic_undecided: formData.topicUndecided,
+    });
 
     try {
       const result = await submitSpeakerApplication({
@@ -70,12 +75,23 @@ export function BecomeSpeaker() {
 
       if (!result.ok) {
         setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        trackEvent('speaker_application_error', {
+          source: '/become-a-speaker',
+          message: result.message ?? 'Unable to submit right now. Please try again.',
+        });
         return;
       }
 
       setIsSubmitted(true);
+      trackEvent('speaker_application_success', {
+        source: '/become-a-speaker',
+      });
     } catch {
       setSubmitError('Unable to submit right now. Please try again.');
+      trackEvent('speaker_application_error', {
+        source: '/become-a-speaker',
+        message: 'Unexpected submit error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -97,6 +113,7 @@ export function BecomeSpeaker() {
           </p>
           <a
             href="/"
+            onClick={() => trackEvent('speaker_application_return_home_click')}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
           >
             Return Home
@@ -333,7 +350,13 @@ export function BecomeSpeaker() {
 
                 <p className="text-xs text-[var(--color-text-muted)] text-center">
                   We typically respond within 2 weeks. Questions? Contact us at{' '}
-                  <a href="mailto:commitee@wawsydney.com" className="text-[var(--color-accent)] hover:underline">
+                  <a
+                    href="mailto:commitee@wawsydney.com"
+                    onClick={() =>
+                      trackEvent('speaker_application_contact_click', { target: 'mailto:commitee@wawsydney.com' })
+                    }
+                    className="text-[var(--color-accent)] hover:underline"
+                  >
                     commitee@wawsydney.com
                   </a>
                 </p>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { getReadableTextColor, inferCompanyNameFromDomain, isBrandfetchConfigured } from '../services/brandfetch';
 import { getSupabaseClient } from '../services/supabase';
+import { trackEvent } from '../services/analytics';
 import {
   JOB_PACKAGES,
   createPublishCheckoutSession,
@@ -459,12 +460,21 @@ export function JobSubmit() {
       if (!result.ok) {
         setStatusType('error');
         setStatusMessage(result.message ?? 'Payment was captured but review submission failed.');
+        trackEvent('job_post_payment_confirm_error', {
+          draft_id: draftParam,
+          package_type: selectedPackage,
+          message: result.message ?? 'Payment was captured but review submission failed.',
+        });
         return;
       }
 
       setHasProcessedPaymentSuccess(true);
       setStatusType('success');
       setStatusMessage('Payment confirmed. Your job listing is now in the admin review queue.');
+      trackEvent('job_post_payment_confirm_success', {
+        draft_id: draftParam,
+        package_type: selectedPackage,
+      });
     };
 
     void processSuccessfulPayment();
@@ -479,12 +489,21 @@ export function JobSubmit() {
     setStatusMessage(null);
     setStatusType(null);
     setIsSavingDraft(true);
+    trackEvent('job_post_save_draft_submit', {
+      draft_id: draftId ?? 'new',
+      package_type: selectedPackage,
+    });
 
     const saveResult = await saveJobDraft(toDraftInput(formState, selectedPackage), draftId ?? undefined);
 
     if (!saveResult.ok || !saveResult.data) {
       setStatusType('error');
       setStatusMessage(saveResult.message ?? 'Unable to save draft.');
+      trackEvent('job_post_save_draft_error', {
+        draft_id: draftId ?? 'new',
+        package_type: selectedPackage,
+        message: saveResult.message ?? 'Unable to save draft.',
+      });
       setIsSavingDraft(false);
       return;
     }
@@ -496,6 +515,11 @@ export function JobSubmit() {
     if (!loginLinkResult.ok) {
       setStatusType('error');
       setStatusMessage(`Draft saved, but login link email failed: ${loginLinkResult.message ?? 'unknown error.'}`);
+      trackEvent('job_post_save_draft_error', {
+        draft_id: currentDraftId,
+        package_type: selectedPackage,
+        message: loginLinkResult.message ?? 'Draft saved, but login link failed.',
+      });
       setIsSavingDraft(false);
       return;
     }
@@ -504,6 +528,10 @@ export function JobSubmit() {
     setStatusMessage(
       'Draft saved. A one-time secure sign-in link was emailed so you can resume this job post from any device.'
     );
+    trackEvent('job_post_save_draft_success', {
+      draft_id: currentDraftId,
+      package_type: selectedPackage,
+    });
     setIsSavingDraft(false);
   };
 
@@ -511,10 +539,20 @@ export function JobSubmit() {
     setStatusMessage(null);
     setStatusType(null);
     setIsPublishing(true);
+    trackEvent('job_post_publish_submit', {
+      draft_id: draftId ?? 'new',
+      package_type: selectedPackage,
+      payments_disabled: paymentsDisabled,
+    });
 
     if (!sessionEmail) {
       setStatusType('error');
       setStatusMessage('For secure publishing, open your one-time email login link first, then continue.');
+      trackEvent('job_post_publish_error', {
+        draft_id: draftId ?? 'new',
+        package_type: selectedPackage,
+        message: 'Missing secure session email',
+      });
       setIsPublishing(false);
       return;
     }
@@ -522,6 +560,11 @@ export function JobSubmit() {
     if (formState.postedByEmail.trim().toLowerCase() !== sessionEmail.trim().toLowerCase()) {
       setStatusType('error');
       setStatusMessage('Please publish using the same email address that owns this secure session.');
+      trackEvent('job_post_publish_error', {
+        draft_id: draftId ?? 'new',
+        package_type: selectedPackage,
+        message: 'Posted-by email does not match active session',
+      });
       setIsPublishing(false);
       return;
     }
@@ -530,6 +573,11 @@ export function JobSubmit() {
     if (!saveResult.ok || !saveResult.data) {
       setStatusType('error');
       setStatusMessage(saveResult.message ?? 'Unable to save draft before submission.');
+      trackEvent('job_post_publish_error', {
+        draft_id: draftId ?? 'new',
+        package_type: selectedPackage,
+        message: saveResult.message ?? 'Unable to save draft before submission.',
+      });
       setIsPublishing(false);
       return;
     }
@@ -542,6 +590,11 @@ export function JobSubmit() {
       if (!submitResult.ok || !submitResult.data) {
         setStatusType('error');
         setStatusMessage(submitResult.message ?? 'Unable to submit job for review.');
+        trackEvent('job_post_publish_error', {
+          draft_id: savedDraftId,
+          package_type: selectedPackage,
+          message: submitResult.message ?? 'Unable to submit job for review.',
+        });
         setIsPublishing(false);
         return;
       }
@@ -550,6 +603,11 @@ export function JobSubmit() {
       setStatusMessage(
         'Job submitted for admin review. Stripe is disabled in test mode, so no payment was required.'
       );
+      trackEvent('job_post_publish_success', {
+        draft_id: savedDraftId,
+        package_type: selectedPackage,
+        payments_disabled: true,
+      });
       setIsPublishing(false);
       return;
     }
@@ -558,6 +616,11 @@ export function JobSubmit() {
     if (!pendingPaymentResult.ok) {
       setStatusType('error');
       setStatusMessage(pendingPaymentResult.message ?? 'Unable to prepare checkout.');
+      trackEvent('job_post_publish_error', {
+        draft_id: savedDraftId,
+        package_type: selectedPackage,
+        message: pendingPaymentResult.message ?? 'Unable to prepare checkout.',
+      });
       setIsPublishing(false);
       return;
     }
@@ -571,25 +634,45 @@ export function JobSubmit() {
     if (!checkoutResult.ok) {
       setStatusType('error');
       setStatusMessage(checkoutResult.message);
+      trackEvent('job_post_publish_error', {
+        draft_id: savedDraftId,
+        package_type: selectedPackage,
+        message: checkoutResult.message,
+      });
       setIsPublishing(false);
       return;
     }
 
+    trackEvent('job_post_checkout_redirect', {
+      draft_id: savedDraftId,
+      package_type: selectedPackage,
+      target: checkoutResult.url,
+    });
     window.location.href = checkoutResult.url;
   };
 
   const handleSendAccessLink = async () => {
     if (!draftParam) return;
+    trackEvent('job_post_access_link_submit', {
+      draft_id: draftParam,
+    });
 
     const result = await sendDraftMagicLink(authLinkEmail, draftParam);
     if (!result.ok) {
       setStatusType('error');
       setStatusMessage(result.message ?? 'Unable to send access link.');
+      trackEvent('job_post_access_link_error', {
+        draft_id: draftParam,
+        message: result.message ?? 'Unable to send access link.',
+      });
       return;
     }
 
     setStatusType('success');
     setStatusMessage('Secure sign-in link sent. Check your inbox to continue this draft.');
+    trackEvent('job_post_access_link_success', {
+      draft_id: draftParam,
+    });
   };
 
   const requiresSpecificLocation = formState.locationMode !== 'remote';
@@ -618,6 +701,11 @@ export function JobSubmit() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 md:py-18">
           <Link
             to={draftParam ? '/jobs' : '/jobs/post'}
+            onClick={() =>
+              trackEvent('job_submit_back_click', {
+                target: draftParam ? '/jobs' : '/jobs/post',
+              })
+            }
             className="flex w-fit items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] mb-6"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,7 +1092,12 @@ export function JobSubmit() {
                   <button
                     key={mode}
                     type="button"
-                    onClick={() => setFormState((current) => ({ ...current, applicationMode: mode }))}
+                    onClick={() => {
+                      setFormState((current) => ({ ...current, applicationMode: mode }));
+                      trackEvent('job_submit_application_mode_select', {
+                        mode,
+                      });
+                    }}
                     className={`px-4 py-3 rounded-lg border text-left transition-all ${
                       formState.applicationMode === mode
                         ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] bg-[var(--color-accent)]/5'
@@ -1171,6 +1264,7 @@ export function JobSubmit() {
                   {!draftParam && (
                     <Link
                       to="/jobs/post"
+                      onClick={() => trackEvent('job_submit_change_plan_click', { target: '/jobs/post' })}
                       className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-[var(--color-border)] bg-white text-sm font-medium text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
                     >
                       Change plan

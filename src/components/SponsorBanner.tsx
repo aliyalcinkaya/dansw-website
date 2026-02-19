@@ -3,6 +3,7 @@ import funnelLogo from '../assets/sponsor_logos/funnel.png';
 import imwtLogo from '../assets/sponsor_logos/imwt.webp';
 import metriclabsLogo from '../assets/sponsor_logos/metriclabs.png';
 import snowplowLogo from '../assets/sponsor_logos/snowplow.png';
+import { trackEvent } from '../services/analytics';
 
 const sponsors = [
   { name: 'Canva', href: 'https://www.canva.com', logo: canvaLogo },
@@ -27,6 +28,12 @@ export function SponsorBanner() {
               href={sponsor.href}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackEvent('sponsor_logo_click', {
+                  sponsor_name: sponsor.name,
+                  target: sponsor.href,
+                })
+              }
               className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all"
             >
               <img src={sponsor.logo} alt={sponsor.name} className="h-10 w-auto" loading="lazy" />

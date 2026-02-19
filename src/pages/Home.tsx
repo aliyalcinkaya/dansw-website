@@ -4,22 +4,25 @@ import { useEventbriteEvents } from '../hooks/useEventbriteEvents';
 import { getLinkedInEmbedPosts, getLinkedInEmbedPostsFromInputs } from '../services/linkedin';
 import { fetchLinkedInPostUrls } from '../services/siteSettings';
 import { UpcomingEventsSection } from '../components/UpcomingEventsSection';
+import { trackEvent } from '../services/analytics';
+
+const eventPhotoPaths = Object.values(
+  import.meta.glob('../assets/event_photos/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true, import: 'default' }),
+).filter((value): value is string => typeof value === 'string');
 
 const avatarImagePaths = Object.keys(
-  import.meta.glob('/public/avatar/*.{jpg,jpeg,png,webp,avif,gif}'),
+  import.meta.glob('/public/avatar/*.{jpg,jpeg,webp,avif,gif}'),
 ).map((path) => path.replace('/public', ''));
 
-const memberPhotoPaths = Object.keys(
-  import.meta.glob('/public/member_photos/*.{jpg,jpeg,png,webp,avif,gif}'),
-).map((path) => path.replace('/public', ''));
+const heroEventPhotos = eventPhotoPaths.length > 0 ? [...eventPhotoPaths].sort() : ['/member_photos/1000022844.jpg'];
 
 const heroCollagePhotoClasses = [
-  'absolute left-1/2 top-1/2 w-64 h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-2xl -rotate-6 z-20 -translate-x-[96%] -translate-y-[72%] animate-fade-in-up animate-delay-100',
-  'absolute left-1/2 top-1/2 w-72 h-72 lg:w-80 lg:h-80 rounded-2xl overflow-hidden shadow-2xl rotate-4 z-30 -translate-x-[6%] -translate-y-[60%] animate-fade-in-up animate-delay-200',
-  'absolute left-1/2 top-1/2 w-60 h-60 lg:w-[17rem] lg:h-[17rem] rounded-2xl overflow-hidden shadow-2xl -rotate-3 z-10 -translate-x-[56%] -translate-y-[2%] animate-fade-in-up animate-delay-300',
+  'absolute left-1/2 top-1/2 w-64 h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden shadow-2xl -rotate-6 z-20 -translate-x-[96%] -translate-y-[72%] bg-[var(--color-surface-alt)]',
+  'absolute left-1/2 top-1/2 w-72 h-72 lg:w-80 lg:h-80 rounded-2xl overflow-hidden shadow-2xl rotate-4 z-30 -translate-x-[6%] -translate-y-[60%] bg-[var(--color-surface-alt)]',
+  'absolute left-1/2 top-1/2 w-60 h-60 lg:w-[17rem] lg:h-[17rem] rounded-2xl overflow-hidden shadow-2xl -rotate-3 z-10 -translate-x-[56%] -translate-y-[2%] bg-[var(--color-surface-alt)]',
 ];
 
-function pickRandomAvatars(images: string[], count: number) {
+function pickRandomPhotos(images: string[], count: number) {
   const shuffled = [...images];
 
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -27,20 +30,23 @@ function pickRandomAvatars(images: string[], count: number) {
     [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
   }
 
-  return shuffled.slice(0, count);
+  return shuffled.slice(0, Math.max(0, count));
 }
 
 export function Home() {
   const { events, loading, error, refetch } = useEventbriteEvents();
   const slackInviteUrl = 'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
   const linkedinCompanyUrl = 'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all';
-  const heroAvatars = useMemo(() => pickRandomAvatars(avatarImagePaths, 8), []);
-  const heroCollagePhotos = useMemo(
-    () => pickRandomAvatars(memberPhotoPaths, heroCollagePhotoClasses.length),
+  const heroAvatars = useMemo(
+    () => pickRandomPhotos(avatarImagePaths.length > 0 ? avatarImagePaths : heroEventPhotos, 8),
     [],
   );
-  const rotatingMemberPhotos = useMemo(
-    () => pickRandomAvatars(memberPhotoPaths, memberPhotoPaths.length),
+  const heroCollagePhotos = useMemo(
+    () => pickRandomPhotos(heroEventPhotos, heroCollagePhotoClasses.length),
+    [],
+  );
+  const rotatingEventPhotos = useMemo(
+    () => pickRandomPhotos(heroEventPhotos, heroEventPhotos.length),
     [],
   );
   const [memberPhotoIndex, setMemberPhotoIndex] = useState(0);
@@ -66,21 +72,21 @@ export function Home() {
   }, []);
 
   useEffect(() => {
-    if (rotatingMemberPhotos.length <= 1) {
+    if (rotatingEventPhotos.length <= 1) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      setMemberPhotoIndex((current) => (current + 1) % rotatingMemberPhotos.length);
+      setMemberPhotoIndex((current) => (current + 1) % rotatingEventPhotos.length);
     }, 3500);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [rotatingMemberPhotos]);
+  }, [rotatingEventPhotos]);
 
   const currentMemberPhoto =
-    rotatingMemberPhotos[memberPhotoIndex] ?? '/member_photos/1000022844.jpg';
+    rotatingEventPhotos[memberPhotoIndex] ?? heroEventPhotos[0];
 
   return (
     <div>
@@ -92,27 +98,34 @@ export function Home() {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-32">
           <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 items-center">
             <div className="max-w-2xl relative z-30">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-medium mb-6 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-medium mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
                 </span>
-                <Link to="/jobs" className="text-[var(--color-accent)] hover:underline">Job Board is Live! See Open Roles</Link>
+                <Link
+                  to="/jobs"
+                  onClick={() => trackEvent('home_cta_click', { cta_id: 'hero_job_board_badge', target: '/jobs' })}
+                  className="text-[var(--color-accent)] hover:underline"
+                >
+                  Job Board is Live! See Open Roles
+                </Link>
               </div>
 
-              <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6 animate-fade-in-up animate-delay-100">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6">
                 Join Sydney's biggest {' '}
                 <span className="italic text-[var(--color-accent)]"> analytics</span>{' '}
                 community
               </h1>
 
-              <p className="text-lg md:text-xl text-[var(--color-text-muted)] mb-8 leading-relaxed animate-fade-in-up animate-delay-200">
+              <p className="text-lg md:text-xl text-[var(--color-text-muted)] mb-8 leading-relaxed">
                 Informal meetup for web analytics, digital marketing optimization, digital advertising and related types to meet and catch up. Second Wednesday of each month.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animate-delay-300">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/events"
+                  onClick={() => trackEvent('home_cta_click', { cta_id: 'hero_join_next_event', target: '/events' })}
                   className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all shadow-lg shadow-[var(--color-accent)]/25"
                 >
                   Join our Next Event
@@ -124,6 +137,7 @@ export function Home() {
                   href={slackInviteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackEvent('home_cta_click', { cta_id: 'hero_join_slack', target: 'slack_invite' })}
                   className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-[var(--color-text)] font-semibold border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
                 >
                   Join Slack
@@ -132,16 +146,17 @@ export function Home() {
               </div>
 
               {heroAvatars.length > 0 && (
-                <div className="mt-6 flex items-center gap-3 animate-fade-in-up animate-delay-300">
+                <div className="mt-6 flex items-center gap-3">
                   <div className="flex -space-x-4">
                     {heroAvatars.map((avatarSrc, index) => (
                       <img
-                        key={avatarSrc}
+                        key={`${avatarSrc}-${index}`}
                         src={avatarSrc}
                         alt="Community member"
                         className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm"
                         style={{ zIndex: heroAvatars.length - index }}
-                        loading="lazy"
+                        loading={index < 4 ? 'eager' : 'lazy'}
+                        fetchPriority={index < 2 ? 'high' : 'auto'}
                       />
                     ))}
                     <div className="flex h-11 w-16 items-center justify-center rounded-full border-2 border-white bg-[var(--color-surface-alt)] px-2 text-xs font-semibold text-[var(--color-primary)] shadow-sm">
@@ -166,7 +181,14 @@ export function Home() {
 
                   return (
                     <div key={`${photoSrc}-${index}`} className={className}>
-                      <img src={photoSrc} alt="" aria-hidden="true" className="w-full h-full object-cover" loading="lazy" />
+                      <img
+                        src={photoSrc}
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full h-full object-cover"
+                        loading="eager"
+                        fetchPriority={index === 0 ? 'high' : 'auto'}
+                      />
                     </div>
                   );
                 })}
@@ -200,6 +222,7 @@ export function Home() {
               href={linkedinCompanyUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent('home_cta_click', { cta_id: 'linkedin_follow', target: linkedinCompanyUrl })}
               className="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-[#bfd6ee] bg-white text-[#0A66C2] font-semibold hover:border-[#0A66C2] transition-all"
             >
               Follow on LinkedIn
@@ -246,6 +269,12 @@ export function Home() {
                         href={post.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() =>
+                          trackEvent('home_linkedin_post_click', {
+                            post_id: post.id,
+                            target: post.sourceUrl,
+                          })
+                        }
                         className="inline-flex items-center text-sm font-semibold text-[#0A66C2] hover:underline"
                       >
                         View full post on LinkedIn
@@ -297,6 +326,7 @@ export function Home() {
               </p>
               <Link
                 to="/about"
+                onClick={() => trackEvent('home_cta_click', { cta_id: 'about_learn_more', target: '/about' })}
                 className="inline-flex items-center text-[var(--color-accent)] font-semibold hover:gap-3 transition-all gap-2"
               >
                 Learn more about us
@@ -311,7 +341,7 @@ export function Home() {
               <div className="aspect-square rounded-3xl overflow-hidden shadow-xl border border-[var(--color-border)] bg-white">
                 <img
                   src={currentMemberPhoto}
-                  alt="DAW Sydney members at an event"
+                  alt="DAW Sydney event photo"
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -339,6 +369,9 @@ export function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/become-a-speaker"
+                  onClick={() =>
+                    trackEvent('home_cta_click', { cta_id: 'do_a_talk_submit', target: '/become-a-speaker' })
+                  }
                   className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-[var(--color-primary)] transition-all hover:bg-[var(--color-accent)] hover:text-white"
                 >
                   Submit a Talk
@@ -348,6 +381,9 @@ export function Home() {
                 </Link>
                 <Link
                   to="/events"
+                  onClick={() =>
+                    trackEvent('home_cta_click', { cta_id: 'do_a_talk_view_sessions', target: '/events' })
+                  }
                   className="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3 font-semibold text-white transition-all hover:bg-white/10"
                 >
                   View Upcoming Sessions
