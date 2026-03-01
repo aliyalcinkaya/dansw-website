@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { stripMarkdown } from '../components/MarkdownContent';
 import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { getReadableTextColor } from '../services/brandfetch';
 import { fetchPublishedJobs, formatSalaryRange } from '../services/jobs';
 import { trackEvent } from '../services/analytics';
 import type { EmploymentType, JobPost, LocationMode } from '../types/jobs';
+import { stripMarkdown } from '../utils/markdown';
 
 type EmploymentFilter = 'all' | EmploymentType;
 type LocationFilter = 'all' | LocationMode;

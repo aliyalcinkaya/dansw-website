@@ -4,6 +4,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const FORM_ROUTING_TABLE = toTrimmed(Deno.env.get('FORM_EMAIL_ROUTING_TABLE')) || 'form_email_routing';
+const MAX_REQUEST_BYTES = 32_000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
 
 type FormKind = 'general' | 'speaker' | 'member' | 'sponsor' | 'job';
 
@@ -19,6 +22,13 @@ interface RoutingRow {
   cc_emails: string[] | null;
   enabled: boolean;
 }
+
+interface RateLimitBucket {
+  count: number;
+  windowStart: number;
+}
+
+const rateLimitBuckets = new Map<string, RateLimitBucket>();
 
 function toTrimmed(value: string | undefined | null) {
   return value?.trim() ?? '';
@@ -45,13 +55,35 @@ function parseAllowedOrigins(rawValue: string) {
     .filter((origin) => origin.length > 0 && isValidAllowedOrigin(origin));
 }
 
+function getConfiguredAllowedOrigins() {
+  return parseAllowedOrigins(toTrimmed(Deno.env.get('FORM_FORWARDER_ALLOWED_ORIGIN')));
+}
+
+function extractRequestOrigin(request: Request) {
+  return toTrimmed(request.headers.get('origin')).replace(/\/+$/, '');
+}
+
+function isRequestOriginAllowed(request: Request) {
+  const configuredOrigins = getConfiguredAllowedOrigins();
+  if (configuredOrigins.length === 0 || configuredOrigins.includes('*')) {
+    return true;
+  }
+
+  const requestOrigin = extractRequestOrigin(request);
+  if (!requestOrigin) {
+    return false;
+  }
+
+  return configuredOrigins.includes(requestOrigin);
+}
+
 function resolveAllowedOrigin(request: Request) {
-  const configuredOrigins = parseAllowedOrigins(toTrimmed(Deno.env.get('FORM_FORWARDER_ALLOWED_ORIGIN')));
+  const configuredOrigins = getConfiguredAllowedOrigins();
   if (configuredOrigins.length === 0 || configuredOrigins.includes('*')) {
     return '*';
   }
 
-  const requestOrigin = toTrimmed(request.headers.get('origin')).replace(/\/+$/, '');
+  const requestOrigin = extractRequestOrigin(request);
   if (!requestOrigin) {
     return configuredOrigins[0];
   }
@@ -218,6 +250,37 @@ function formatResendError(rawResponse: string) {
   return 'Resend API request failed.';
 }
 
+function getRequestIpAddress(request: Request) {
+  const forwardedFor = toTrimmed(request.headers.get('x-forwarded-for'));
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
+  }
+
+  const realIp = toTrimmed(request.headers.get('x-real-ip'));
+  return realIp || 'unknown';
+}
+
+function isRateLimited(key: string, maxRequests: number, windowMs: number) {
+  const now = Date.now();
+  const existing = rateLimitBuckets.get(key);
+
+  if (!existing || now - existing.windowStart >= windowMs) {
+    rateLimitBuckets.set(key, {
+      count: 1,
+      windowStart: now,
+    });
+    return false;
+  }
+
+  if (existing.count >= maxRequests) {
+    return true;
+  }
+
+  existing.count += 1;
+  rateLimitBuckets.set(key, existing);
+  return false;
+}
+
 async function fetchRoutingRule(
   formKind: FormKind
 ): Promise<{ ok: true; data: RoutingRow | null } | { ok: false; message: string }> {
@@ -266,9 +329,23 @@ Deno.serve(async (request) => {
     return errorResponse(request, 405, 'Method not allowed.');
   }
 
+  if (!isRequestOriginAllowed(request)) {
+    return errorResponse(request, 403, 'Origin is not allowed.');
+  }
+
+  const clientIp = getRequestIpAddress(request);
+  if (isRateLimited(clientIp, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS)) {
+    return errorResponse(request, 429, 'Too many requests. Please try again shortly.');
+  }
+
+  let rawBody = '';
   let payload: ForwardRequestBody;
   try {
-    payload = (await request.json()) as ForwardRequestBody;
+    rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BYTES) {
+      return errorResponse(request, 413, 'Request payload is too large.');
+    }
+    payload = JSON.parse(rawBody) as ForwardRequestBody;
   } catch {
     return errorResponse(request, 400, 'Invalid request payload.');
   }

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { Toast } from '../components/Toast';
 import { submitMemberApplication } from '../services/forms';
 import { trackEvent } from '../services/analytics';
 
@@ -12,6 +13,14 @@ interface FormData {
   institution: string; // company or school
   goals: string;
 }
+
+const initialFormData: FormData = {
+  name: '',
+  email: '',
+  profession: '',
+  institution: '',
+  goals: '',
+};
 
 const volunteerOpportunities = [
   {
@@ -89,22 +98,15 @@ const volunteerOpportunities = [
 ];
 
 export function BecomeMember() {
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    profession: '',
-    institution: '',
-    goals: '',
-  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; title?: string; message: string } | null>(null);
   const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitError('');
+    setToast(null);
     trackEvent('volunteer_application_submit', {
       source: '/join',
       profession: formData.profession || 'unknown',
@@ -112,7 +114,11 @@ export function BecomeMember() {
 
     try {
       if (!formData.profession) {
-        setSubmitError('Please select what best describes you.');
+        setToast({
+          type: 'error',
+          title: 'Selection required',
+          message: 'Please select what best describes you.',
+        });
         trackEvent('volunteer_application_error', {
           source: '/join',
           message: 'Profession not selected',
@@ -131,20 +137,34 @@ export function BecomeMember() {
       });
 
       if (!result.ok) {
-        setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        setToast({
+          type: 'error',
+          title: 'Volunteer application not sent',
+          message: result.message ?? 'Could not send your application right now. Please try again.',
+        });
         trackEvent('volunteer_application_error', {
           source: '/join',
-          message: result.message ?? 'Unable to submit right now. Please try again.',
+          message: result.message ?? 'Could not send your application right now. Please try again.',
         });
         return;
       }
 
-      setIsSubmitted(true);
+      setToast({
+        type: 'success',
+        title: 'Volunteer application received',
+        message: 'Volunteer application received. Thank you. We will follow up by email soon.',
+      });
+      setFormData(initialFormData);
+      setWebsite('');
       trackEvent('volunteer_application_success', {
         source: '/join',
       });
     } catch {
-      setSubmitError('Unable to submit right now. Please try again.');
+      setToast({
+        type: 'error',
+        title: 'Volunteer application not sent',
+        message: 'Could not send your application right now. Please try again.',
+      });
       trackEvent('volunteer_application_error', {
         source: '/join',
         message: 'Unexpected submit error',
@@ -180,33 +200,15 @@ export function BecomeMember() {
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center">
-            <svg className="w-10 h-10 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-3xl text-[var(--color-primary)] mb-4">Thanks for volunteering!</h2>
-          <p className="text-[var(--color-text-muted)] mb-8">
-            Thank you for applying to volunteer with DAWSydney. We will be in touch soon.
-          </p>
-          <Link
-            to="/"
-            onClick={() => trackEvent('volunteer_application_return_home_click')}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
-          >
-            Return Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
+      <Toast
+        open={Boolean(toast)}
+        type={toast?.type ?? 'info'}
+        title={toast?.title}
+        message={toast?.message ?? ''}
+        onClose={() => setToast(null)}
+      />
       {/* Header */}
       <section className="bg-white border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
@@ -411,12 +413,6 @@ export function BecomeMember() {
                     </>
                   )}
                 </button>
-
-                {submitError && (
-                  <p className="text-sm text-red-600 text-center" role="status">
-                    {submitError}
-                  </p>
-                )}
 
                 <p className="text-xs text-[var(--color-text-muted)] text-center">
                   By submitting this form, you agree to our{' '}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Toast } from '../components/Toast';
 import { submitGeneralInquiry } from '../services/forms';
 
 interface ContactFormState {
@@ -20,13 +20,12 @@ export function Contact() {
   const [formState, setFormState] = useState<ContactFormState>(initialFormState);
   const [website, setWebsite] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; title?: string; message: string } | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
-    setSubmitError('');
+    setToast(null);
 
     try {
       const result = await submitGeneralInquiry({
@@ -39,55 +38,41 @@ export function Contact() {
       });
 
       if (!result.ok) {
-        setSubmitError(result.message ?? 'Unable to submit your message right now. Please try again.');
+        setToast({
+          type: 'error',
+          title: 'Message not sent',
+          message: result.message ?? 'Could not send your message right now. Please try again.',
+        });
         return;
       }
 
-      setIsSubmitted(true);
+      setToast({
+        type: 'success',
+        title: 'Message sent',
+        message: 'Message received. Thanks for reaching out. We will reply by email shortly.',
+      });
       setFormState(initialFormState);
       setWebsite('');
     } catch {
-      setSubmitError('Unable to submit your message right now. Please try again.');
+      setToast({
+        type: 'error',
+        title: 'Message not sent',
+        message: 'Could not send your message right now. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center">
-            <svg className="w-10 h-10 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-3xl text-[var(--color-primary)] mb-4">Message received</h2>
-          <p className="text-[var(--color-text-muted)] mb-8">
-            Thanks for reaching out. We will get back to you shortly.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsSubmitted(false)}
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-text)] font-semibold hover:border-[var(--color-accent)] transition-all"
-            >
-              Send another message
-            </button>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
-            >
-              Return Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
+      <Toast
+        open={Boolean(toast)}
+        type={toast?.type ?? 'info'}
+        title={toast?.title}
+        message={toast?.message ?? ''}
+        onClose={() => setToast(null)}
+      />
       <section className="bg-white border-b border-[var(--color-border)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 md:py-24">
           <p className="text-[var(--color-accent)] text-sm font-semibold uppercase tracking-wider">Contact</p>
@@ -185,8 +170,6 @@ export function Contact() {
                     placeholder="Tell us more..."
                   />
                 </label>
-
-                {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
                 <button
                   type="submit"

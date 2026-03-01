@@ -18,6 +18,7 @@ export function Navigation() {
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
+  // Close mobile menu when route changes (e.g., browser back/forward)
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);

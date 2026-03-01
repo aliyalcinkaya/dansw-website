@@ -10,7 +10,6 @@ import {
   fetchDraftByIdForCurrentUser,
   formatSalaryRange,
   getCurrentSupabaseUserEmail,
-  markJobPaidAndSubmitForReview,
   markJobPendingPayment,
   saveJobDraft,
   sendDraftMagicLink,
@@ -238,7 +237,6 @@ export function JobSubmit() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'success' | 'error' | null>(null);
   const [authLinkEmail, setAuthLinkEmail] = useState('');
-  const [hasProcessedPaymentSuccess, setHasProcessedPaymentSuccess] = useState(false);
   const brandfetchEnabled = isBrandfetchConfigured();
   const { branding: detectedBranding, loading: isBrandLookupLoading, domain: brandDomain } = useCompanyBranding(
     formState.companyWebsite
@@ -259,7 +257,8 @@ export function JobSubmit() {
     paymentStatus === 'success'
       ? {
           type: 'success' as const,
-          message: 'Payment succeeded. We will review and publish your job listing shortly.',
+          message:
+            'Payment return received. Listing will stay pending payment until Stripe webhook verification is enabled.',
         }
       : paymentStatus === 'cancelled'
         ? {
@@ -287,14 +286,6 @@ export function JobSubmit() {
 
     navigate('/jobs/post', { replace: true });
   }, [draftParam, navigate, selectedPlanParam]);
-
-  useEffect(() => {
-    if (draftParam || !selectedPlanParam) {
-      return;
-    }
-
-    setSelectedPackage((current) => (current === selectedPlanParam ? current : selectedPlanParam));
-  }, [draftParam, selectedPlanParam]);
 
   useEffect(() => {
     if (!brandDomain) {
@@ -445,44 +436,6 @@ export function JobSubmit() {
       isMounted = false;
     };
   }, [draftParam]);
-
-  useEffect(() => {
-    if (paymentsDisabled) return;
-    if (paymentStatus !== 'success') return;
-    if (!draftParam || !sessionEmail || hasProcessedPaymentSuccess) return;
-
-    let cancelled = false;
-
-    const processSuccessfulPayment = async () => {
-      const result = await markJobPaidAndSubmitForReview(draftParam);
-      if (cancelled) return;
-
-      if (!result.ok) {
-        setStatusType('error');
-        setStatusMessage(result.message ?? 'Payment was captured but review submission failed.');
-        trackEvent('job_post_payment_confirm_error', {
-          draft_id: draftParam,
-          package_type: selectedPackage,
-          message: result.message ?? 'Payment was captured but review submission failed.',
-        });
-        return;
-      }
-
-      setHasProcessedPaymentSuccess(true);
-      setStatusType('success');
-      setStatusMessage('Payment confirmed. Your job listing is now in the admin review queue.');
-      trackEvent('job_post_payment_confirm_success', {
-        draft_id: draftParam,
-        package_type: selectedPackage,
-      });
-    };
-
-    void processSuccessfulPayment();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [draftParam, hasProcessedPaymentSuccess, paymentStatus, paymentsDisabled, sessionEmail]);
 
   const handleSaveDraft = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

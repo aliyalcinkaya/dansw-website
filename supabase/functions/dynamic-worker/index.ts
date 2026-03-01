@@ -4,6 +4,10 @@ const EVENTBRITE_API_BASE = 'https://www.eventbriteapi.com/v3';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const EVENTBRITE_PAGE_SIZE = 50;
 const MAX_EVENTBRITE_PAGES = 20;
+const MAX_REQUEST_BYTES = 24_000;
+const LIST_RATE_LIMIT_WINDOW_MS = 60_000;
+const LIST_RATE_LIMIT_MAX_REQUESTS = 30;
+const LIST_CACHE_TTL_MS = 60_000;
 
 type Action = 'list' | 'create' | 'update';
 
@@ -31,6 +35,14 @@ interface EventbriteFunctionPayload {
   event?: SyncEventPayload;
 }
 
+interface RateLimitBucket {
+  count: number;
+  windowStart: number;
+}
+
+const listRateLimitBuckets = new Map<string, RateLimitBucket>();
+const listCacheByOrganization = new Map<string, { expiresAt: number; events: unknown[] }>();
+
 function toTrimmed(value: string | undefined | null) {
   return value?.trim() ?? '';
 }
@@ -56,13 +68,35 @@ function parseAllowedOrigins(rawValue: string) {
     .filter((origin) => origin.length > 0 && isValidAllowedOrigin(origin));
 }
 
+function getConfiguredAllowedOrigins() {
+  return parseAllowedOrigins(toTrimmed(Deno.env.get('EVENTBRITE_ALLOWED_ORIGIN')));
+}
+
+function extractRequestOrigin(request: Request) {
+  return toTrimmed(request.headers.get('origin')).replace(/\/+$/, '');
+}
+
+function isRequestOriginAllowed(request: Request) {
+  const configuredOrigins = getConfiguredAllowedOrigins();
+  if (configuredOrigins.length === 0 || configuredOrigins.includes('*')) {
+    return true;
+  }
+
+  const requestOrigin = extractRequestOrigin(request);
+  if (!requestOrigin) {
+    return false;
+  }
+
+  return configuredOrigins.includes(requestOrigin);
+}
+
 function resolveAllowedOrigin(request: Request) {
-  const configuredOrigins = parseAllowedOrigins(toTrimmed(Deno.env.get('EVENTBRITE_ALLOWED_ORIGIN')));
+  const configuredOrigins = getConfiguredAllowedOrigins();
   if (configuredOrigins.length === 0 || configuredOrigins.includes('*')) {
     return '*';
   }
 
-  const requestOrigin = toTrimmed(request.headers.get('origin')).replace(/\/+$/, '');
+  const requestOrigin = extractRequestOrigin(request);
   if (!requestOrigin) {
     return configuredOrigins[0];
   }
@@ -93,6 +127,42 @@ function jsonResponse(request: Request, status: number, body: Record<string, unk
 
 function errorResponse(request: Request, status: number, message: string) {
   return jsonResponse(request, status, { ok: false, message });
+}
+
+function getRequestIpAddress(request: Request) {
+  const forwardedFor = toTrimmed(request.headers.get('x-forwarded-for'));
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
+  }
+
+  const realIp = toTrimmed(request.headers.get('x-real-ip'));
+  return realIp || 'unknown';
+}
+
+function isRateLimited(
+  buckets: Map<string, RateLimitBucket>,
+  key: string,
+  maxRequests: number,
+  windowMs: number
+) {
+  const now = Date.now();
+  const existing = buckets.get(key);
+
+  if (!existing || now - existing.windowStart >= windowMs) {
+    buckets.set(key, {
+      count: 1,
+      windowStart: now,
+    });
+    return false;
+  }
+
+  if (existing.count >= maxRequests) {
+    return true;
+  }
+
+  existing.count += 1;
+  buckets.set(key, existing);
+  return false;
 }
 
 function getBearerToken(request: Request) {
@@ -360,9 +430,18 @@ Deno.serve(async (request) => {
     return errorResponse(request, 405, 'Method not allowed.');
   }
 
+  if (!isRequestOriginAllowed(request)) {
+    return errorResponse(request, 403, 'Origin is not allowed.');
+  }
+
+  let rawBody = '';
   let payload: EventbriteFunctionPayload;
   try {
-    payload = (await request.json()) as EventbriteFunctionPayload;
+    rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BYTES) {
+      return errorResponse(request, 413, 'Request payload is too large.');
+    }
+    payload = JSON.parse(rawBody) as EventbriteFunctionPayload;
   } catch {
     return errorResponse(request, 400, 'Invalid request payload.');
   }
@@ -385,6 +464,23 @@ Deno.serve(async (request) => {
       return errorResponse(request, 400, 'Organization ID is required for list action.');
     }
 
+    const listRateLimitKey = `${getRequestIpAddress(request)}:${organizationId}`;
+    if (
+      isRateLimited(
+        listRateLimitBuckets,
+        listRateLimitKey,
+        LIST_RATE_LIMIT_MAX_REQUESTS,
+        LIST_RATE_LIMIT_WINDOW_MS
+      )
+    ) {
+      return errorResponse(request, 429, 'Too many Eventbrite requests. Please try again shortly.');
+    }
+
+    const cached = listCacheByOrganization.get(organizationId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return jsonResponse(request, 200, { ok: true, events: cached.events });
+    }
+
     const listResult = await listOrganizationEvents(privateToken, organizationId);
 
     if (!listResult.ok) {
@@ -404,6 +500,11 @@ Deno.serve(async (request) => {
 
       seenEventIds.add(eventId);
       return true;
+    });
+
+    listCacheByOrganization.set(organizationId, {
+      events,
+      expiresAt: Date.now() + LIST_CACHE_TTL_MS,
     });
 
     return jsonResponse(request, 200, { ok: true, events });

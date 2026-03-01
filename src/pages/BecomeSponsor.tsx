@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Toast } from '../components/Toast';
 import { submitSponsorInquiry } from '../services/forms';
 import { trackEvent } from '../services/analytics';
 
@@ -9,6 +10,14 @@ interface FormData {
   sponsorshipType: string;
   message: string;
 }
+
+const initialFormData: FormData = {
+  name: '',
+  email: '',
+  company: '',
+  sponsorshipType: '',
+  message: '',
+};
 
 const sponsorshipTiers = [
   {
@@ -81,22 +90,15 @@ const whySponsor = [
 ];
 
 export function BecomeSponsor() {
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    company: '',
-    sponsorshipType: '',
-    message: '',
-  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; title?: string; message: string } | null>(null);
   const [website, setWebsite] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitError('');
+    setToast(null);
     trackEvent('sponsor_inquiry_submit', {
       source: '/become-a-sponsor',
       sponsorship_type: formData.sponsorshipType || 'unknown',
@@ -110,20 +112,34 @@ export function BecomeSponsor() {
       });
 
       if (!result.ok) {
-        setSubmitError(result.message ?? 'Unable to submit right now. Please try again.');
+        setToast({
+          type: 'error',
+          title: 'Sponsorship inquiry not sent',
+          message: result.message ?? 'Could not send your inquiry right now. Please try again.',
+        });
         trackEvent('sponsor_inquiry_error', {
           source: '/become-a-sponsor',
-          message: result.message ?? 'Unable to submit right now. Please try again.',
+          message: result.message ?? 'Could not send your inquiry right now. Please try again.',
         });
         return;
       }
 
-      setIsSubmitted(true);
+      setToast({
+        type: 'success',
+        title: 'Sponsorship inquiry received',
+        message: 'Sponsorship inquiry received. We will follow up by email within 2-3 business days.',
+      });
+      setFormData(initialFormData);
+      setWebsite('');
       trackEvent('sponsor_inquiry_success', {
         source: '/become-a-sponsor',
       });
     } catch {
-      setSubmitError('Unable to submit right now. Please try again.');
+      setToast({
+        type: 'error',
+        title: 'Sponsorship inquiry not sent',
+        message: 'Could not send your inquiry right now. Please try again.',
+      });
       trackEvent('sponsor_inquiry_error', {
         source: '/become-a-sponsor',
         message: 'Unexpected submit error',
@@ -133,33 +149,15 @@ export function BecomeSponsor() {
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center">
-            <svg className="w-10 h-10 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-3xl text-[var(--color-primary)] mb-4">Thank you for your interest!</h2>
-          <p className="text-[var(--color-text-muted)] mb-8">
-            We've received your sponsorship inquiry and will be in touch within 2-3 business days to discuss partnership opportunities.
-          </p>
-          <a
-            href="/"
-            onClick={() => trackEvent('sponsor_inquiry_return_home_click')}
-            className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-accent)] text-white font-semibold hover:bg-[var(--color-accent-light)] transition-all"
-          >
-            Return Home
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
+      <Toast
+        open={Boolean(toast)}
+        type={toast?.type ?? 'info'}
+        title={toast?.title}
+        message={toast?.message ?? ''}
+        onClose={() => setToast(null)}
+      />
       {/* Header */}
       <section className="bg-white border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
@@ -362,11 +360,6 @@ export function BecomeSponsor() {
                     )}
                   </button>
 
-                  {submitError && (
-                    <p className="text-sm text-red-600 text-center" role="status">
-                      {submitError}
-                    </p>
-                  )}
                 </form>
               </div>
             </div>

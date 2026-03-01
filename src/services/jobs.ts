@@ -406,6 +406,20 @@ async function getCurrentUserIdentity() {
   };
 }
 
+async function isCurrentUserAdmin() {
+  const client = getSupabaseClient();
+  if (!client) {
+    return false;
+  }
+
+  const { data, error } = await client.rpc('is_job_admin');
+  if (error) {
+    return false;
+  }
+
+  return data === true;
+}
+
 function createDraftRedirectUrl(draftId: string) {
   return buildAbsoluteAppUrl(`/jobs/submit?draft=${encodeURIComponent(draftId)}`);
 }
@@ -846,6 +860,15 @@ export async function markJobPaidAndSubmitForReview(
       ok: false,
       data: null,
       message: 'Job board backend is not configured yet.',
+    };
+  }
+
+  const canManage = await isCurrentUserAdmin();
+  if (!canManage) {
+    return {
+      ok: false,
+      data: null,
+      message: 'Admin permission is required to mark payment as verified.',
     };
   }
 

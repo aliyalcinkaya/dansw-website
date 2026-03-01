@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { MarkdownContent, stripMarkdown } from '../components/MarkdownContent';
+import { MarkdownContent } from '../components/MarkdownContent';
 import { useCompanyBranding } from '../hooks/useCompanyBranding';
 import { getReadableTextColor } from '../services/brandfetch';
 import { fetchPublishedJobBySlug, formatSalaryRange, submitJobApplication } from '../services/jobs';
 import { trackEvent } from '../services/analytics';
 import type { JobPost } from '../types/jobs';
+import { stripMarkdown } from '../utils/markdown';
 
 interface ApplicationFormState {
   applicantName: string;

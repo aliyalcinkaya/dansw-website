@@ -1,7 +1,7 @@
 import type { DisplayEvent, DisplaySpeaker, DisplayTalk, EventbriteEvent } from '../types/eventbrite';
 import { getSupabaseClient } from './supabase';
 
-const EVENTBRITE_FUNCTION_NAME = import.meta.env.VITE_SUPABASE_EVENTBRITE_FUNCTION?.trim() || 'dynamic-worker';
+const EVENTBRITE_FUNCTION_NAME = import.meta.env.VITE_SUPABASE_EVENTBRITE_FUNCTION?.trim() || 'eventbrite-events';
 const ORGANIZATION_ID = import.meta.env.VITE_EVENTBRITE_ORGANIZATION_ID?.trim() || '';
 const ENABLE_EVENTBRITE_LIVE_REFRESH = import.meta.env.VITE_ENABLE_EVENTBRITE_LIVE_REFRESH === 'true';
 const COMMUNITY_EVENTS_TABLE = 'community_events';

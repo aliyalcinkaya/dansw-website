@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DisplayEvent } from '../types/eventbrite';
 import { fetchUpcomingEvents, getCachedUpcomingEventsSnapshot } from '../services/eventbrite';
 import { shouldForceEventbriteRefreshOnInitialLoad } from './useEventbriteRefreshMode';
@@ -12,16 +12,18 @@ interface UseEventbriteEventsResult {
 
 export function useEventbriteEvents(): UseEventbriteEventsResult {
   const initialEvents = getCachedUpcomingEventsSnapshot();
+  const hadInitialEvents = useRef(initialEvents.length > 0);
   const [events, setEvents] = useState<DisplayEvent[]>(initialEvents);
   const [loading, setLoading] = useState(initialEvents.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async (forceRefresh = false, showLoading = true) => {
+  const fetchEvents = useCallback(async (forceRefresh = false, showLoading = true) => {
     if (showLoading) {
       setLoading(true);
     }
+    // Always clear previous errors on fetch attempt, even for background refetches
     setError(null);
-    
+
     try {
       const upcomingEvents = await fetchUpcomingEvents(forceRefresh);
       setEvents(upcomingEvents);
@@ -35,13 +37,13 @@ export function useEventbriteEvents(): UseEventbriteEventsResult {
         setLoading(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const forceRefresh = shouldForceEventbriteRefreshOnInitialLoad();
-    const showLoading = initialEvents.length === 0 || forceRefresh;
+    const showLoading = !hadInitialEvents.current || forceRefresh;
     void fetchEvents(forceRefresh, showLoading);
-  }, []);
+  }, [fetchEvents]);
 
   return {
     events,

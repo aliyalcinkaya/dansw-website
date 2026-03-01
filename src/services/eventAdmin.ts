@@ -12,7 +12,7 @@ import type { EventbriteEvent } from '../types/eventbrite';
 const EVENTS_TABLE = 'community_events';
 const TALKS_TABLE = 'event_talks';
 const SPEAKERS_TABLE = 'speakers';
-const EVENTBRITE_FUNCTION_NAME = import.meta.env.VITE_SUPABASE_EVENTBRITE_FUNCTION?.trim() || 'dynamic-worker';
+const EVENTBRITE_FUNCTION_NAME = import.meta.env.VITE_SUPABASE_EVENTBRITE_FUNCTION?.trim() || 'eventbrite-events';
 const EVENTBRITE_ORGANIZATION_ID = import.meta.env.VITE_EVENTBRITE_ORGANIZATION_ID || '';
 const SAMPLE_SPEAKERS: Array<{
   fullName: string;

@@ -247,6 +247,7 @@ The function code lives at:
 Notes:
 - Resend has a free tier and is suitable for low-volume use (for example less than 100 emails/month).
 - For public website forms, keep Edge Function JWT verification disabled for `form-forwarder`.
+- Set `FORM_FORWARDER_ALLOWED_ORIGIN` to an explicit allowlist (for example `https://www.dawsydney.org.au`) in production.
 
 ### Job Board Backend
 
@@ -289,6 +290,9 @@ VITE_STRIPE_CHECKOUT_ENDPOINT=https://your-api.example.com/create-job-checkout
 VITE_STRIPE_STANDARD_PAYMENT_LINK=https://buy.stripe.com/your_standard_link
 VITE_STRIPE_AMPLIFIED_PAYMENT_LINK=https://buy.stripe.com/your_amplified_link
 ```
+
+Important: the frontend no longer marks jobs as `paid` from `payment=success` URL params.  
+Use a server-side Stripe webhook to verify checkout completion and update payment status safely.
 
 Temporary test mode (skip Stripe and submit directly to admin review):
 
