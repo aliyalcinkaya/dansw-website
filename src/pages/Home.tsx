@@ -351,13 +351,13 @@ export function Home() {
         </div>
       </section>
 
-      {/* Do a Talk Section */}
+      {/* Give a Talk Section */}
       <section className="py-20 bg-gradient-to-br from-[var(--color-primary)] to-slate-800 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <span className="inline-flex items-center rounded-full border border-white/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/90">
-                Do a Talk
+                Give a Talk
               </span>
               <h2 className="mt-5 text-3xl md:text-4xl">
                 Share practical analytics lessons with the community

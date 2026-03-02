@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from './Logo';
 import { trackEvent } from '../services/analytics';
@@ -7,20 +7,25 @@ const navLinks = [
   { path: '/', label: 'Home' },
   { path: '/about', label: 'About' },
   { path: '/events', label: 'Events' },
-  { path: '/jobs', label: 'Jobs' },
   { path: '/contact', label: 'Contact' },
   { path: '/become-a-speaker', label: 'Become a Speaker' },
 ];
 
 export function Navigation() {
-  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const [mobileMenuState, setMobileMenuState] = useState({
+    open: false,
+    path: location.pathname,
+  });
+  const isOpen = mobileMenuState.open && mobileMenuState.path === location.pathname;
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Close mobile menu when route changes (e.g., browser back/forward)
-  useEffect(() => {
-    setIsOpen(false);
+  const setMenuOpen = useCallback((open: boolean) => {
+    setMobileMenuState({
+      open,
+      path: location.pathname,
+    });
   }, [location.pathname]);
 
   const handleNavClick = (link: { path: string; label: string }, menuType: 'desktop' | 'mobile') => {
@@ -48,7 +53,7 @@ export function Navigation() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        setMenuOpen(false);
         menuButtonRef.current?.focus();
         return;
       }
@@ -81,7 +86,7 @@ export function Navigation() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, setMenuOpen]);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-[var(--color-border)]">
@@ -112,7 +117,7 @@ export function Navigation() {
             ref={menuButtonRef}
             onClick={() => {
               const nextOpenState = !isOpen;
-              setIsOpen(nextOpenState);
+              setMenuOpen(nextOpenState);
               trackEvent('mobile_menu_toggle', {
                 is_open: nextOpenState,
               });
@@ -161,7 +166,7 @@ export function Navigation() {
                   to={link.path}
                   onClick={() => {
                     handleNavClick(link, 'mobile');
-                    setIsOpen(false);
+                    setMenuOpen(false);
                   }}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     location.pathname === link.path

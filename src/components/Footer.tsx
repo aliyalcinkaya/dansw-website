@@ -48,15 +48,6 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  to="/jobs"
-                  onClick={() => trackFooterLink('Jobs', '/jobs')}
-                  className="text-white/60 hover:text-white text-sm transition-colors"
-                >
-                  Jobs
-                </Link>
-              </li>
-              <li>
-                <Link
                   to="/events"
                   onClick={() => trackFooterLink('Events', '/events')}
                   className="text-white/60 hover:text-white text-sm transition-colors"
