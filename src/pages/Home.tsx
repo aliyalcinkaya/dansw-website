@@ -98,20 +98,6 @@ export function Home() {
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-32">
           <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 items-center">
             <div className="max-w-2xl relative z-30">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-sm font-medium mb-6">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-accent)]"></span>
-                </span>
-                <Link
-                  to="/jobs"
-                  onClick={() => trackEvent('home_cta_click', { cta_id: 'hero_job_board_badge', target: '/jobs' })}
-                  className="text-[var(--color-accent)] hover:underline"
-                >
-                  Job Board is Live! See Open Roles
-                </Link>
-              </div>
-
               <h1 className="text-4xl md:text-6xl lg:text-7xl text-[var(--color-primary)] mb-6">
                 Join Sydney's biggest {' '}
                 <span className="italic text-[var(--color-accent)]"> analytics</span>{' '}
