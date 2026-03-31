@@ -186,32 +186,14 @@ export function UpcomingEventsSection({
                         {event.location}
                       </a>
                     </div>
-                    <div className="mt-3 space-y-2">
-                      {event.description && (
-                        <p className="text-[var(--color-text-muted)] whitespace-pre-line">{event.description}</p>
-                      )}
-                      <Link
-                        to={`/talks/${event.id}`}
-                        onClick={() =>
-                          trackEvent('upcoming_event_talk_details_click', {
-                            event_id: event.id,
-                            event_title: event.title,
-                          })
-                        }
-                        className="inline-flex items-center text-sm font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)] hover:underline transition-colors"
-                      >
-                        learn more &gt;&gt;
-                      </Link>
-                    </div>
-
                     {event.talks.length > 0 && (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         {event.talks.slice(0, 2).map((talk) => (
                           <article
                             key={`${event.id}-${talk.id}`}
                             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
                           >
-                            <p className="text-sm font-semibold text-[var(--color-primary)] line-clamp-1">{talk.title}</p>
+                            <p className="text-sm font-semibold text-[var(--color-primary)] line-clamp-2">{talk.title}</p>
                             <div className="mt-2 flex items-center gap-2">
                               {talk.speaker?.photoUrl ? (
                                 <img
@@ -225,14 +207,36 @@ export function UpcomingEventsSection({
                                   {(talk.speaker?.fullName || 'T').slice(0, 1).toUpperCase()}
                                 </div>
                               )}
-                              <p className="text-xs text-[var(--color-text-muted)] line-clamp-1">
-                                {talk.speaker?.fullName || 'Speaker TBC'}
-                              </p>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-[var(--color-text)] truncate">
+                                  {talk.speaker?.fullName || 'Speaker TBC'}
+                                </p>
+                                {talk.speaker?.headline && (
+                                  <p className="text-xs text-[var(--color-text-muted)] truncate">
+                                    {talk.speaker.headline}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </article>
                         ))}
                       </div>
                     )}
+
+                    <div className="mt-3">
+                      <Link
+                        to={`/talks/${event.id}`}
+                        onClick={() =>
+                          trackEvent('upcoming_event_talk_details_click', {
+                            event_id: event.id,
+                            event_title: event.title,
+                          })
+                        }
+                        className="inline-flex items-center text-sm font-semibold text-[var(--color-accent)] hover:text-[var(--color-accent-light)] hover:underline transition-colors"
+                      >
+                        learn more &gt;&gt;
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="flex-shrink-0">
@@ -283,7 +287,7 @@ export function UpcomingEventsSection({
               onClick={() => trackEvent('upcoming_events_archive_click', { target: '/events' })}
               className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:underline"
             >
-              See all talks
+              See Past Talks
             </Link>
           </div>
         )}
