@@ -35,7 +35,8 @@ function pickRandomPhotos(images: string[], count: number) {
 
 export function Home() {
   const { events, loading, error, refetch } = useEventbriteEvents();
-  const slackInviteUrl = 'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
+  const slackInviteUrl =
+    'https://join.slack.com/t/digitalanalyticsnsw/shared_invite/zt-3xwju6h43-80GGD0ZsqSVZx4far29zXA';
   const linkedinCompanyUrl = 'https://www.linkedin.com/company/data-and-analytics-wednesday-sydney/posts/?feedView=all';
   const heroAvatars = useMemo(
     () => pickRandomPhotos(avatarImagePaths.length > 0 ? avatarImagePaths : heroEventPhotos, 8),

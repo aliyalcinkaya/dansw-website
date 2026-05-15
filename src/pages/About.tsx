@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { trackEvent } from '../services/analytics';
 
 const slackInviteUrl =
-  'https://digitalanalyticsnsw.slack.com/join/shared_invite/zt-3mmkotolj-ph8HO7SAO9Z5lx1RDClEZQ?mc_cid=855b22f969&mc_eid=4f57692826#/shared-invite/email';
+  'https://join.slack.com/t/digitalanalyticsnsw/shared_invite/zt-3xwju6h43-80GGD0ZsqSVZx4far29zXA';
 
 const impactMetrics = [
   { label: 'Years Running', value: '10+' },
